@@ -1,0 +1,882 @@
+C51 COMPILER V9.60.7.0   A14_MOTOR                                                         12/19/2023 11:49:39 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE A14_MOTOR
+OBJECT MODULE PLACED IN .\build\Target 1\Driver\A14_motor.o
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.exe .\DRIVER\A14_MOTOR.C OMF2 TABS(4) CODE NOCOND SYMBOLS PRINT(.\build\Targ
+                    -et 1\Driver\A14_motor.lst) INCDIR(../../../../../../../Keil_v5/C51/INC/Atmel;User;System;../../../../../../../Keil_v5/C5
+                    -1/INC) DEFINE(__UVISION_VERSION=526) OPTIMIZE(8,SPEED) LARGE ROM(LARGE) OBJECT(.\build\Target 1\Driver\A14_motor.o)
+
+line level    source
+
+   1          #include "global.h"                  // Device heade
+   2          
+   3          sbit    PWMB_PIN = P0^4;        //定义PWM输出引脚。
+   4          sbit    PWMA_PIN = P0^5;        //定义PWM输出引脚。
+   5          static uint16_t     PWM_high,PWM_low;   //中间变量，用户请勿修改。
+   6          /**
+   7            * @brief 马达GPIO初始化
+   8            * @param  None
+   9            * @retval None
+  10            */
+  11          static void Motor_GPIO_Init(void) {
+  12   1      
+  13   1          GPIO_InitTypeDef GPIO_InitStructure;
+  14   1          
+  15   1          GPIO_InitStructure.GPIO_Mode = GPIO_OUT_PP;
+  16   1          GPIO_InitStructure.GPIO_Pin = Left_MotoA_Pin | Left_MotoB_Pin | Right_MotoA_Pin | Right_MotoB_Pin | Right
+             -_MotoPWM_Pin | Left_MotoPWM_Pin;
+  17   1          GPIO_Init(Motor_Port, &GPIO_InitStructure);
+  18   1          
+  19   1          GPIO_SetBits(Motor_Port, Left_MotoA_Pin | Left_MotoB_Pin | Right_MotoA_Pin | Right_MotoB_Pin | Right_Moto
+             -PWM_Pin | Left_MotoPWM_Pin);
+  20   1      }
+  21          
+  22          void Motor_PWM_Init(void) {
+  23   1          TIM_InitTypeDef     TIM_InitStructure;                  //结构定义
+  24   1          
+  25   1          TIM_InitStructure.TIM_Mode      = TIM_16BitAutoReload;  //指定工作模式,   TIM_16BitAutoReload,TIM_16Bit,TI
+             -M_8BitAutoReload,TIM_16BitAutoReloadNoMask
+  26   1          TIM_InitStructure.TIM_Polity    = PolityLow;            //指定中断优先级, PolityHigh,PolityLow
+  27   1          TIM_InitStructure.TIM_Interrupt = ENABLE;               //中断是否允许,   ENABLE或DISABLE
+  28   1          TIM_InitStructure.TIM_ClkSource = TIM_CLOCK_1T;         //指定时钟源,     TIM_CLOCK_1T,TIM_CLOCK_12T,TIM_CLOCK_
+             -Ext
+  29   1          TIM_InitStructure.TIM_ClkOut    = DISABLE;              //是否输出高速脉冲, ENABLE或DISABLE
+  30   1          TIM_InitStructure.TIM_Value     = 65536UL - PWM_DUTY;   //初值,
+  31   1          TIM_InitStructure.TIM_Run       = ENABLE;               //是否初始化后启动定时器, ENABLE或DISABLE
+  32   1          Timer_Inilize(Timer1,&TIM_InitStructure);               //初始化      Timer0,Timer1,Timer2
+  33   1          
+  34   1          Motor_GPIO_Init(); 
+  35   1      }
+  36          
+  37          /**************** 计算PWM重装值函数 *******************/
+  38          static void LoadPWM(uint16_t i)
+  39          {
+  40   1          uint16_t    j;
+  41   1          j = 65536UL - PWM_DUTY + i; //计算PWM低电平时间
+  42   1          i = 65536UL - i;            //计算PWM高电平时间
+  43   1          EA = 0;
+  44   1          PWM_high = i;   //装载PWM高电平时间
+  45   1          PWM_low  = j;   //装载PWM低电平时间
+  46   1          EA = 1;
+  47   1      }
+  48          
+  49          /********************* Timer1中断函数************************/
+C51 COMPILER V9.60.7.0   A14_MOTOR                                                         12/19/2023 11:49:39 PAGE 2   
+
+  50          void timer1_int (void) interrupt 3
+  51          {
+  52   1          if(PWMB_PIN)
+  53   1          {
+  54   2              TH1 = (uint8_t)(PWM_high >> 8); //如果是输出低电平，则装载高电平时间。
+  55   2              TL1 = (uint8_t)PWM_high;
+  56   2              PWMB_PIN = 0;
+  57   2              PWMA_PIN = 0;       
+  58   2          }
+  59   1          else
+  60   1          {
+  61   2              TH1 = (uint8_t)(PWM_low >> 8);  //如果是输出高电平，则装载低电平时间。
+  62   2              TL1 = (uint8_t)PWM_low;
+  63   2              PWMB_PIN = 1;
+  64   2              PWMA_PIN = 1;       
+  65   2          }
+  66   1      }
+  67          
+  68          /********************* Timer3中断函数************************/
+  69          /*STC15F2K没有定时器3*/
+  70          //void timer3_int (void) interrupt 19
+  71          //{
+  72          //      
+  73          //  P1 = 0;
+  74          //  if(PWMA_PIN)
+  75          //  {
+  76          //      T3H = (uint8_t)(PWM_high >> 8); //如果是输出低电平，则装载高电平时间。
+  77          //      T3L = (uint8_t)PWM_high;
+  78          //      PWMA_PIN = 0;   
+  79          //  }
+  80          //  else
+  81          //  {
+  82          //      T3H = (uint8_t)(PWM_low >> 8);  //如果是输出高电平，则装载低电平时间。
+  83          //      T3L = (uint8_t)PWM_low;
+  84          //      PWMA_PIN = 1;       
+  85          //  }
+  86          //}
+  87          
+  88          void Motor_Run(uint8_t dir, uint16_t speed) {
+  89   1          speed < PWM_HIGH_MIN ?          speed = PWM_HIGH_MIN:speed; //如果写入小于最小占空比数据，则强制为最小占空比。
+  90   1          speed > PWM_HIGH_MAX ?          speed = PWM_HIGH_MAX:speed; //如果写入大于最大占空比数据，则强制为最大占空比。
+  91   1      
+  92   1          switch (dir) {
+  93   2              case FORWARD:
+  94   2                      LeftMotor_Go();
+  95   2                      RightMotor_Go();
+  96   2                      LoadPWM(speed);
+  97   2                      break;
+  98   2              case BACKWARDS:
+  99   2                      LeftMotor_Back();
+ 100   2                      RightMotor_Back();
+ 101   2                      LoadPWM(speed);
+ 102   2                      break;
+ 103   2              case TURNLEFT:
+ 104   2                      LeftMotor_Stop();
+ 105   2                      RightMotor_Go();
+ 106   2                      LoadPWM(speed);
+ 107   2                      break;
+ 108   2              case TURNRIGHT:
+ 109   2                      LeftMotor_Go();
+ 110   2                      RightMotor_Stop();
+ 111   2                      LoadPWM(speed);
+C51 COMPILER V9.60.7.0   A14_MOTOR                                                         12/19/2023 11:49:39 PAGE 3   
+
+ 112   2                      break;
+ 113   2              case SPINTURNLEFT:
+ 114   2                      LeftMotor_Back();
+ 115   2                      RightMotor_Go();
+ 116   2                      LoadPWM(speed);
+ 117   2                      break;
+ 118   2              case SPINTURNRIGHT:
+ 119   2                      LeftMotor_Go();
+ 120   2                      RightMotor_Back();
+ 121   2                      LoadPWM(speed);
+ 122   2                      break;
+ 123   2              case STOP:
+ 124   2                      LeftMotor_Stop();
+ 125   2                      RightMotor_Stop();
+ 126   2                      LoadPWM(speed);
+ 127   2                      break;
+ 128   2              default:
+ 129   2                      LeftMotor_Stop();
+ 130   2                      RightMotor_Stop();
+ 131   2                      break;
+ 132   2          }
+ 133   1      }
+C51 COMPILER V9.60.7.0   A14_MOTOR                                                         12/19/2023 11:49:39 PAGE 4   
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION Motor_GPIO_Init (BEGIN)
+                                           ; SOURCE LINE # 11
+                                           ; SOURCE LINE # 15
+0000 900000      R     MOV     DPTR,#GPIO_InitStructure
+0003 7403              MOV     A,#03H
+0005 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 16
+0006 A3                INC     DPTR
+0007 743F              MOV     A,#03FH
+0009 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 17
+000A 7B01              MOV     R3,#01H
+000C 7A00        R     MOV     R2,#HIGH GPIO_InitStructure
+000E 7900        R     MOV     R1,#LOW GPIO_InitStructure
+0010 E4                CLR     A
+0011 FF                MOV     R7,A
+0012 120000      E     LCALL   _GPIO_Init
+                                           ; SOURCE LINE # 19
+0015 7D3F              MOV     R5,#03FH
+0017 E4                CLR     A
+0018 FF                MOV     R7,A
+0019 020000      E     LJMP    _GPIO_SetBits
+             ; FUNCTION Motor_GPIO_Init (END)
+
+             ; FUNCTION Motor_PWM_Init (BEGIN)
+                                           ; SOURCE LINE # 22
+                                           ; SOURCE LINE # 25
+0000 E4                CLR     A
+0001 900000      R     MOV     DPTR,#TIM_InitStructure
+0004 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 26
+0005 A3                INC     DPTR
+0006 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 27
+0007 A3                INC     DPTR
+0008 04                INC     A
+0009 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 28
+000A E4                CLR     A
+000B A3                INC     DPTR
+000C F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 29
+000D A3                INC     DPTR
+000E F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 30
+000F A3                INC     DPTR
+0010 74F7              MOV     A,#0F7H
+0012 F0                MOVX    @DPTR,A
+0013 A3                INC     DPTR
+0014 745D              MOV     A,#05DH
+0016 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 31
+0017 A3                INC     DPTR
+0018 7401              MOV     A,#01H
+001A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 32
+001B FB                MOV     R3,A
+001C 7A00        R     MOV     R2,#HIGH TIM_InitStructure
+001E 7900        R     MOV     R1,#LOW TIM_InitStructure
+C51 COMPILER V9.60.7.0   A14_MOTOR                                                         12/19/2023 11:49:39 PAGE 5   
+
+0020 FF                MOV     R7,A
+0021 120000      E     LCALL   _Timer_Inilize
+                                           ; SOURCE LINE # 34
+0024 020000      R     LJMP    Motor_GPIO_Init
+             ; FUNCTION Motor_PWM_Init (END)
+
+             ; FUNCTION _LoadPWM (BEGIN)
+                                           ; SOURCE LINE # 38
+;---- Variable 'i' assigned to Register 'R6/R7' ----
+                                           ; SOURCE LINE # 39
+                                           ; SOURCE LINE # 41
+0000 EF                MOV     A,R7
+0001 245D              ADD     A,#05DH
+0003 FD                MOV     R5,A
+0004 EE                MOV     A,R6
+0005 34F7              ADDC    A,#0F7H
+0007 FC                MOV     R4,A
+;---- Variable 'j' assigned to Register 'R4/R5' ----
+                                           ; SOURCE LINE # 42
+0008 C3                CLR     C
+0009 E4                CLR     A
+000A 9F                SUBB    A,R7
+000B FF                MOV     R7,A
+000C E4                CLR     A
+000D 9E                SUBB    A,R6
+                                           ; SOURCE LINE # 43
+000E C2AF              CLR     EA
+                                           ; SOURCE LINE # 44
+0010 900000      R     MOV     DPTR,#PWM_high
+0013 F0                MOVX    @DPTR,A
+0014 A3                INC     DPTR
+0015 EF                MOV     A,R7
+0016 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 45
+0017 AE04              MOV     R6,AR4
+0019 AF05              MOV     R7,AR5
+001B 900000      R     MOV     DPTR,#PWM_low
+001E EE                MOV     A,R6
+001F F0                MOVX    @DPTR,A
+0020 A3                INC     DPTR
+0021 EF                MOV     A,R7
+0022 F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 46
+0023 D2AF              SETB    EA
+                                           ; SOURCE LINE # 47
+0025 22                RET     
+             ; FUNCTION _LoadPWM (END)
+
+             ; FUNCTION timer1_int (BEGIN)
+0000 C0E0              PUSH    ACC
+0002 C083              PUSH    DPH
+0004 C082              PUSH    DPL
+0006 C0D0              PUSH    PSW
+0008 75D000            MOV     PSW,#00H
+000B C004              PUSH    AR4
+000D C005              PUSH    AR5
+                                           ; SOURCE LINE # 50
+                                           ; SOURCE LINE # 52
+000F 308413            JNB     PWMB_PIN,?C0004
+                                           ; SOURCE LINE # 53
+                                           ; SOURCE LINE # 54
+0012 900000      R     MOV     DPTR,#PWM_high
+C51 COMPILER V9.60.7.0   A14_MOTOR                                                         12/19/2023 11:49:39 PAGE 6   
+
+0015 E0                MOVX    A,@DPTR
+0016 FC                MOV     R4,A
+0017 A3                INC     DPTR
+0018 E0                MOVX    A,@DPTR
+0019 FD                MOV     R5,A
+001A EC                MOV     A,R4
+001B F58D              MOV     TH1,A
+                                           ; SOURCE LINE # 55
+001D 8D8B              MOV     TL1,R5
+                                           ; SOURCE LINE # 56
+001F C284              CLR     PWMB_PIN
+                                           ; SOURCE LINE # 57
+0021 C285              CLR     PWMA_PIN
+                                           ; SOURCE LINE # 58
+0023 8011              SJMP    ?C0006
+0025         ?C0004:
+                                           ; SOURCE LINE # 60
+                                           ; SOURCE LINE # 61
+0025 900000      R     MOV     DPTR,#PWM_low
+0028 E0                MOVX    A,@DPTR
+0029 FC                MOV     R4,A
+002A A3                INC     DPTR
+002B E0                MOVX    A,@DPTR
+002C FD                MOV     R5,A
+002D EC                MOV     A,R4
+002E F58D              MOV     TH1,A
+                                           ; SOURCE LINE # 62
+0030 8D8B              MOV     TL1,R5
+                                           ; SOURCE LINE # 63
+0032 D284              SETB    PWMB_PIN
+                                           ; SOURCE LINE # 64
+0034 D285              SETB    PWMA_PIN
+                                           ; SOURCE LINE # 65
+                                           ; SOURCE LINE # 66
+0036         ?C0006:
+0036 D005              POP     AR5
+0038 D004              POP     AR4
+003A D0D0              POP     PSW
+003C D082              POP     DPL
+003E D083              POP     DPH
+0040 D0E0              POP     ACC
+0042 32                RETI    
+             ; FUNCTION timer1_int (END)
+
+             ; FUNCTION _Motor_Run (BEGIN)
+                                           ; SOURCE LINE # 88
+0000 900000      R     MOV     DPTR,#dir
+0003 EF                MOV     A,R7
+0004 F0                MOVX    @DPTR,A
+0005 A3                INC     DPTR
+0006 EC                MOV     A,R4
+0007 F0                MOVX    @DPTR,A
+0008 A3                INC     DPTR
+0009 ED                MOV     A,R5
+000A F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 89
+000B C3                CLR     C
+000C 94F4              SUBB    A,#0F4H
+000E EC                MOV     A,R4
+000F 9401              SUBB    A,#01H
+0011 500A              JNC     ?C0007
+0013 900000      R     MOV     DPTR,#speed
+C51 COMPILER V9.60.7.0   A14_MOTOR                                                         12/19/2023 11:49:39 PAGE 7   
+
+0016 7401              MOV     A,#01H
+0018 F0                MOVX    @DPTR,A
+0019 A3                INC     DPTR
+001A 74F4              MOV     A,#0F4H
+001C F0                MOVX    @DPTR,A
+001D         ?C0007:
+                                           ; SOURCE LINE # 90
+001D 900000      R     MOV     DPTR,#speed
+0020 E0                MOVX    A,@DPTR
+0021 FE                MOV     R6,A
+0022 A3                INC     DPTR
+0023 E0                MOVX    A,@DPTR
+0024 FF                MOV     R7,A
+0025 E4                CLR     A
+0026 FC                MOV     R4,A
+0027 FD                MOV     R5,A
+0028 7BA2              MOV     R3,#0A2H
+002A 7A08              MOV     R2,#08H
+002C F9                MOV     R1,A
+002D F8                MOV     R0,A
+002E C3                CLR     C
+002F 120000      E     LCALL   ?C?ULCMP
+0032 500A              JNC     ?C0009
+0034 900000      R     MOV     DPTR,#speed
+0037 7408              MOV     A,#08H
+0039 F0                MOVX    @DPTR,A
+003A A3                INC     DPTR
+003B 74A2              MOV     A,#0A2H
+003D F0                MOVX    @DPTR,A
+003E         ?C0009:
+                                           ; SOURCE LINE # 92
+003E 900000      R     MOV     DPTR,#dir
+0041 E0                MOVX    A,@DPTR
+0042 B40700            CJNE    A,#07H,?C0021
+0045         ?C0021:
+0045 4003              JC      $ + 5H
+0047 020000      R     LJMP    ?C0019
+004A 900000      R     MOV     DPTR,#?C0022
+004D F8                MOV     R0,A
+004E 28                ADD     A,R0
+004F 28                ADD     A,R0
+0050 73                JMP     @A+DPTR
+0051         ?C0022:
+0051 020000      R     LJMP    ?C0012
+0054 020000      R     LJMP    ?C0013
+0057 020000      R     LJMP    ?C0014
+005A 020000      R     LJMP    ?C0015
+005D 020000      R     LJMP    ?C0016
+0060 020000      R     LJMP    ?C0017
+0063 020000      R     LJMP    ?C0018
+                                           ; SOURCE LINE # 93
+0066         ?C0012:
+                                           ; SOURCE LINE # 94
+0066 7D08              MOV     R5,#08H
+0068 E4                CLR     A
+0069 FF                MOV     R7,A
+006A 120000      E     LCALL   _GPIO_SetBits
+                                           ; SOURCE LINE # 95
+                                           ; SOURCE LINE # 96
+                                           ; SOURCE LINE # 97
+006D 8017              SJMP    ?C0023
+                                           ; SOURCE LINE # 98
+C51 COMPILER V9.60.7.0   A14_MOTOR                                                         12/19/2023 11:49:39 PAGE 8   
+
+006F         ?C0013:
+                                           ; SOURCE LINE # 99
+006F 7D08              MOV     R5,#08H
+0071 E4                CLR     A
+0072 FF                MOV     R7,A
+0073 120000      E     LCALL   _GPIO_ResetBits
+0076 7D04              MOV     R5,#04H
+0078 E4                CLR     A
+0079 FF                MOV     R7,A
+007A 120000      E     LCALL   _GPIO_SetBits
+                                           ; SOURCE LINE # 100
+                                           ; SOURCE LINE # 101
+                                           ; SOURCE LINE # 102
+007D 803E              SJMP    ?C0024
+                                           ; SOURCE LINE # 103
+007F         ?C0014:
+                                           ; SOURCE LINE # 104
+007F 7D08              MOV     R5,#08H
+0081 E4                CLR     A
+0082 FF                MOV     R7,A
+0083 120000      E     LCALL   _GPIO_ResetBits
+0086         ?C0023:
+0086 7D04              MOV     R5,#04H
+0088 E4                CLR     A
+0089 FF                MOV     R7,A
+008A 120000      E     LCALL   _GPIO_ResetBits
+                                           ; SOURCE LINE # 105
+                                           ; SOURCE LINE # 106
+                                           ; SOURCE LINE # 107
+008D 8017              SJMP    ?C0025
+                                           ; SOURCE LINE # 108
+008F         ?C0015:
+                                           ; SOURCE LINE # 109
+008F 7D08              MOV     R5,#08H
+0091 E4                CLR     A
+0092 FF                MOV     R7,A
+0093 120000      E     LCALL   _GPIO_SetBits
+                                           ; SOURCE LINE # 110
+                                           ; SOURCE LINE # 111
+                                           ; SOURCE LINE # 112
+0096 803C              SJMP    ?C0026
+                                           ; SOURCE LINE # 113
+0098         ?C0016:
+                                           ; SOURCE LINE # 114
+0098 7D08              MOV     R5,#08H
+009A E4                CLR     A
+009B FF                MOV     R7,A
+009C 120000      E     LCALL   _GPIO_ResetBits
+009F 7D04              MOV     R5,#04H
+00A1 E4                CLR     A
+00A2 FF                MOV     R7,A
+00A3 120000      E     LCALL   _GPIO_SetBits
+                                           ; SOURCE LINE # 115
+00A6         ?C0025:
+00A6 7D01              MOV     R5,#01H
+00A8 E4                CLR     A
+00A9 FF                MOV     R7,A
+00AA 120000      E     LCALL   _GPIO_SetBits
+                                           ; SOURCE LINE # 116
+                                           ; SOURCE LINE # 117
+00AD 8033              SJMP    ?C0027
+                                           ; SOURCE LINE # 118
+C51 COMPILER V9.60.7.0   A14_MOTOR                                                         12/19/2023 11:49:39 PAGE 9   
+
+00AF         ?C0017:
+                                           ; SOURCE LINE # 119
+00AF 7D08              MOV     R5,#08H
+00B1 E4                CLR     A
+00B2 FF                MOV     R7,A
+00B3 120000      E     LCALL   _GPIO_SetBits
+00B6 7D04              MOV     R5,#04H
+00B8 E4                CLR     A
+00B9 FF                MOV     R7,A
+00BA 120000      E     LCALL   _GPIO_ResetBits
+                                           ; SOURCE LINE # 120
+00BD         ?C0024:
+00BD 7D01              MOV     R5,#01H
+00BF E4                CLR     A
+00C0 FF                MOV     R7,A
+00C1 120000      E     LCALL   _GPIO_ResetBits
+00C4 7D02              MOV     R5,#02H
+00C6 E4                CLR     A
+00C7 FF                MOV     R7,A
+00C8 120000      E     LCALL   _GPIO_SetBits
+                                           ; SOURCE LINE # 121
+                                           ; SOURCE LINE # 122
+00CB 801C              SJMP    ?C0028
+                                           ; SOURCE LINE # 123
+00CD         ?C0018:
+                                           ; SOURCE LINE # 124
+00CD 7D08              MOV     R5,#08H
+00CF E4                CLR     A
+00D0 FF                MOV     R7,A
+00D1 120000      E     LCALL   _GPIO_ResetBits
+00D4         ?C0026:
+00D4 7D04              MOV     R5,#04H
+00D6 E4                CLR     A
+00D7 FF                MOV     R7,A
+00D8 120000      E     LCALL   _GPIO_ResetBits
+                                           ; SOURCE LINE # 125
+00DB 7D01              MOV     R5,#01H
+00DD E4                CLR     A
+00DE FF                MOV     R7,A
+00DF 120000      E     LCALL   _GPIO_ResetBits
+00E2         ?C0027:
+00E2 7D02              MOV     R5,#02H
+00E4 E4                CLR     A
+00E5 FF                MOV     R7,A
+00E6 120000      E     LCALL   _GPIO_ResetBits
+                                           ; SOURCE LINE # 126
+00E9         ?C0028:
+00E9 900000      R     MOV     DPTR,#speed
+00EC E0                MOVX    A,@DPTR
+00ED FE                MOV     R6,A
+00EE A3                INC     DPTR
+00EF E0                MOVX    A,@DPTR
+00F0 FF                MOV     R7,A
+00F1 020000      R     LJMP    _LoadPWM
+                                           ; SOURCE LINE # 127
+                                           ; SOURCE LINE # 128
+00F4         ?C0019:
+                                           ; SOURCE LINE # 129
+00F4 7D08              MOV     R5,#08H
+00F6 E4                CLR     A
+00F7 FF                MOV     R7,A
+00F8 120000      E     LCALL   _GPIO_ResetBits
+C51 COMPILER V9.60.7.0   A14_MOTOR                                                         12/19/2023 11:49:39 PAGE 10  
+
+00FB 7D04              MOV     R5,#04H
+00FD E4                CLR     A
+00FE FF                MOV     R7,A
+00FF 120000      E     LCALL   _GPIO_ResetBits
+                                           ; SOURCE LINE # 130
+0102 7D01              MOV     R5,#01H
+0104 E4                CLR     A
+0105 FF                MOV     R7,A
+0106 120000      E     LCALL   _GPIO_ResetBits
+0109 7D02              MOV     R5,#02H
+010B E4                CLR     A
+010C FF                MOV     R7,A
+010D 120000      E     LCALL   _GPIO_ResetBits
+                                           ; SOURCE LINE # 131
+                                           ; SOURCE LINE # 132
+                                           ; SOURCE LINE # 133
+0110         ?C0020:
+0110 22                RET     
+             ; FUNCTION _Motor_Run (END)
+
+C51 COMPILER V9.60.7.0   A14_MOTOR                                                         12/19/2023 11:49:39 PAGE 11  
+
+NAME                                    CLASS   MSPACE  TYPE    OFFSET  SIZE
+====                                    =====   ======  ====    ======  ====
+
+
+PWMA_PIN . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0085H  1
+uint16_t . . . . . . . . . . . . . . .  TYPEDEF  -----  U_INT    -----  2
+CCF2 . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00DAH  1
+P1M0 . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0092H  1
+P0M1 . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0093H  1
+PWMB_PIN . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0084H  1
+P2M0 . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0096H  1
+P1M1 . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0091H  1
+P0 . . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0080H  1
+P3M0 . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00B2H  1
+P2M1 . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0095H  1
+P1 . . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0090H  1
+PCA_InitTypeDef. . . . . . . . . . . .  TYPEDEF  -----  STRUCT   -----  8
+  PCA_IoUse. . . . . . . . . . . . . .  MEMBER   -----  U_CHAR   0000H  1
+  PCA_Clock. . . . . . . . . . . . . .  MEMBER   -----  U_CHAR   0001H  1
+  PCA_Mode . . . . . . . . . . . . . .  MEMBER   -----  U_CHAR   0002H  1
+  PCA_PWM_Wide . . . . . . . . . . . .  MEMBER   -----  U_CHAR   0003H  1
+  PCA_Interrupt_Mode . . . . . . . . .  MEMBER   -----  U_CHAR   0004H  1
+  PCA_Polity . . . . . . . . . . . . .  MEMBER   -----  U_CHAR   0005H  1
+  PCA_Value. . . . . . . . . . . . . .  MEMBER   -----  U_INT    0006H  2
+P4M0 . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00B4H  1
+P3M1 . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00B1H  1
+P2 . . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00A0H  1
+timer1_int . . . . . . . . . . . . . .  PUBLIC   CODE   PROC     0000H  -----
+WKTCH. . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00ABH  1
+P5M0 . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00CAH  1
+P4M1 . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00B3H  1
+P3 . . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00B0H  1
+P6M0 . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00CCH  1
+P5M1 . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00C9H  1
+P4 . . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00C0H  1
+AC . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00D6H  1
+PWMIF. . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00F6H  1
+P7M0 . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00E2H  1
+P6M1 . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00CBH  1
+P5 . . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00C8H  1
+EA . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00AFH  1
+P7M1 . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00E1H  1
+P6 . . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00E8H  1
+WKTCL. . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00AAH  1
+P7 . . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00F8H  1
+SPINTURNRIGHT. . . . . . . . . . . . .  E_CONST  -----  U_CHAR   -----  1
+SPCTL. . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00CEH  1
+CF . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00DFH  1
+PWMCR. . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00F5H  1
+CH . . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00F9H  1
+P_SW1. . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00A2H  1
+P_SW2. . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00BAH  1
+EADC . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00ADH  1
+IE . . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00A8H  1
+CL . . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00E9H  1
+IAP_CMD. . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00C5H  1
+CCAP0H . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00FAH  1
+size_t . . . . . . . . . . . . . . . .  TYPEDEF  -----  U_INT    -----  2
+CCAP1H . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00FBH  1
+CCAP2H . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00FCH  1
+ADC_RES. . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00BDH  1
+C51 COMPILER V9.60.7.0   A14_MOTOR                                                         12/19/2023 11:49:39 PAGE 12  
+
+NAME                                    CLASS   MSPACE  TYPE    OFFSET  SIZE
+====                                    =====   ======  ====    ======  ====
+
+
+CCAP0L . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00EAH  1
+CR . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00DEH  1
+BACKWARDS. . . . . . . . . . . . . . .  E_CONST  -----  U_CHAR   -----  1
+PWMFDCR. . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00F7H  1
+CCAP1L . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00EBH  1
+CCAPM0 . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00DAH  1
+CCAP2L . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00ECH  1
+CCAPM1 . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00DBH  1
+TIM_InitTypeDef. . . . . . . . . . . .  TYPEDEF  -----  STRUCT   -----  8
+  TIM_Mode . . . . . . . . . . . . . .  MEMBER   -----  U_CHAR   0000H  1
+  TIM_Polity . . . . . . . . . . . . .  MEMBER   -----  U_CHAR   0001H  1
+  TIM_Interrupt. . . . . . . . . . . .  MEMBER   -----  U_CHAR   0002H  1
+  TIM_ClkSource. . . . . . . . . . . .  MEMBER   -----  U_CHAR   0003H  1
+  TIM_ClkOut . . . . . . . . . . . . .  MEMBER   -----  U_CHAR   0004H  1
+  TIM_Value. . . . . . . . . . . . . .  MEMBER   -----  U_INT    0005H  2
+  TIM_Run. . . . . . . . . . . . . . .  MEMBER   -----  U_CHAR   0007H  1
+FORWARD. . . . . . . . . . . . . . . .  E_CONST  -----  U_CHAR   -----  1
+CCAPM2 . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00DCH  1
+ES . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00ACH  1
+PADC . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00BDH  1
+IP . . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00B8H  1
+RI . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0098H  1
+Motor_GPIO_Init. . . . . . . . . . . .  STATIC   CODE   PROC     0000H  -----
+  GPIO_InitStructure . . . . . . . . .  AUTO     XDATA  STRUCT   0000H  2
+_motor_direction_. . . . . . . . . . .  * TAG *  -----  ENUM     -----  -----
+CY . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00D7H  1
+TI . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0099H  1
+COMx_InitDefine. . . . . . . . . . . .  TYPEDEF  -----  STRUCT   -----  13
+  UART_Mode. . . . . . . . . . . . . .  MEMBER   -----  U_CHAR   0000H  1
+  UART_BRT_Use . . . . . . . . . . . .  MEMBER   -----  U_CHAR   0001H  1
+  UART_BaudRate. . . . . . . . . . . .  MEMBER   -----  U_LONG   0002H  4
+  Morecommunicate. . . . . . . . . . .  MEMBER   -----  U_CHAR   0006H  1
+  UART_RxEnable. . . . . . . . . . . .  MEMBER   -----  U_CHAR   0007H  1
+  BaudRateDouble . . . . . . . . . . .  MEMBER   -----  U_CHAR   0008H  1
+  UART_Interrupt . . . . . . . . . . .  MEMBER   -----  U_CHAR   0009H  1
+  UART_Polity. . . . . . . . . . . . .  MEMBER   -----  U_CHAR   000AH  1
+  UART_P_SW. . . . . . . . . . . . . .  MEMBER   -----  U_CHAR   000BH  1
+  UART_RXD_TXD_Short . . . . . . . . .  MEMBER   -----  U_CHAR   000CH  1
+CLK_DIV. . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0097H  1
+IAP_ADDRH. . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00C3H  1
+PS . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00BCH  1
+SP . . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0081H  1
+CMOD . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00D9H  1
+CCON . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00D8H  1
+IAP_ADDRL. . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00C4H  1
+PPCA . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00BFH  1
+OV . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00D2H  1
+_GPIO_Init . . . . . . . . . . . . . .  EXTERN   CODE   PROC     -----  -----
+CMPCR1 . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00E6H  1
+PWM_low. . . . . . . . . . . . . . . .  STATIC   XDATA  U_INT    0000H  2
+CMPCR2 . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00E7H  1
+_Motor_Run . . . . . . . . . . . . . .  PUBLIC   CODE   PROC     0000H  -----
+  dir. . . . . . . . . . . . . . . . .  AUTO     XDATA  U_CHAR   0000H  1
+  speed. . . . . . . . . . . . . . . .  AUTO     XDATA  U_INT    0001H  2
+_GPIO_ResetBits. . . . . . . . . . . .  EXTERN   CODE   PROC     -----  -----
+ELVD . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00AEH  1
+P00. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0080H  1
+C51 COMPILER V9.60.7.0   A14_MOTOR                                                         12/19/2023 11:49:39 PAGE 13  
+
+NAME                                    CLASS   MSPACE  TYPE    OFFSET  SIZE
+====                                    =====   ======  ====    ======  ====
+
+
+ADC_CONTR. . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00BCH  1
+SBUF . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0099H  1
+PCON . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0087H  1
+P10. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0090H  1
+P01. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0081H  1
+P20. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00A0H  1
+P11. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0091H  1
+P02. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0082H  1
+P30. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B0H  1
+P21. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00A1H  1
+P12. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0092H  1
+P03. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0083H  1
+SPINTURNLEFT . . . . . . . . . . . . .  E_CONST  -----  U_CHAR   -----  1
+SCON . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0098H  1
+P40. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00C0H  1
+P31. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B1H  1
+P22. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00A2H  1
+P13. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0093H  1
+P04. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0084H  1
+TMOD . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0089H  1
+TCON . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0088H  1
+P50. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00C8H  1
+P41. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00C1H  1
+P32. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B2H  1
+P23. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00A3H  1
+P14. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0094H  1
+P05. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0085H  1
+P60. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00E8H  1
+P51. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00C9H  1
+P42. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00C2H  1
+P33. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B3H  1
+P24. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00A4H  1
+P15. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0095H  1
+P06. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0086H  1
+PLVD . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00BEH  1
+P70. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00F8H  1
+P61. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00E9H  1
+P52. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00CAH  1
+P43. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00C3H  1
+P34. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B4H  1
+P25. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00A5H  1
+P16. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0096H  1
+P07. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0087H  1
+P71. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00F9H  1
+P62. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00EAH  1
+P53. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00CBH  1
+P44. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00C4H  1
+P35. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B5H  1
+P26. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00A6H  1
+P17. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0097H  1
+P72. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00FAH  1
+P63. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00EBH  1
+P54. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00CCH  1
+P45. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00C5H  1
+P36. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B6H  1
+P27. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00A7H  1
+P73. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00FBH  1
+C51 COMPILER V9.60.7.0   A14_MOTOR                                                         12/19/2023 11:49:39 PAGE 14  
+
+NAME                                    CLASS   MSPACE  TYPE    OFFSET  SIZE
+====                                    =====   ======  ====    ======  ====
+
+
+P64. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00ECH  1
+P55. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00CDH  1
+P46. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00C6H  1
+P37. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B7H  1
+P74. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00FCH  1
+P65. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00EDH  1
+P56. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00CEH  1
+P47. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00C7H  1
+P75. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00FDH  1
+P66. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00EEH  1
+P57. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00CFH  1
+_Timer_Inilize . . . . . . . . . . . .  EXTERN   CODE   PROC     -----  -----
+P76. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00FEH  1
+P67. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00EFH  1
+IE0. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0089H  1
+BUS_SPEED. . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00A1H  1
+P77. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00FFH  1
+IE1. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      008BH  1
+IE2. . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00AFH  1
+AUXR . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   008EH  1
+B. . . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00F0H  1
+IAP_CONTR. . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00C7H  1
+PWMCFG . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00F1H  1
+STOP . . . . . . . . . . . . . . . . .  E_CONST  -----  U_CHAR   -----  1
+ACC. . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00E0H  1
+ET0. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00A9H  1
+TF0. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      008DH  1
+ET1. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00ABH  1
+TURNRIGHT. . . . . . . . . . . . . . .  E_CONST  -----  U_CHAR   -----  1
+TF1. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      008FH  1
+IP2. . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00B5H  1
+RB8. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      009AH  1
+TH0. . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   008CH  1
+TH1. . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   008DH  1
+IT0. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0088H  1
+EX0. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00A8H  1
+TB8. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      009BH  1
+T2H. . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00D6H  1
+IT1. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      008AH  1
+EX1. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00AAH  1
+uint8_t. . . . . . . . . . . . . . . .  TYPEDEF  -----  U_CHAR   -----  1
+T3H. . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00D4H  1
+P. . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00D0H  1
+SM0. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      009FH  1
+T4H. . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00D2H  1
+TL0. . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   008AH  1
+SM1. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      009EH  1
+TL1. . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   008BH  1
+SM2. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      009DH  1
+T2L. . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00D7H  1
+_GPIO_SetBits. . . . . . . . . . . . .  EXTERN   CODE   PROC     -----  -----
+T3L. . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00D5H  1
+T4L. . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00D3H  1
+PT0. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B9H  1
+PT1. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00BBH  1
+RS0. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00D3H  1
+IAP_DATA . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00C2H  1
+C51 COMPILER V9.60.7.0   A14_MOTOR                                                         12/19/2023 11:49:39 PAGE 15  
+
+NAME                                    CLASS   MSPACE  TYPE    OFFSET  SIZE
+====                                    =====   ======  ====    ======  ====
+
+
+TR0. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      008CH  1
+RS1. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00D4H  1
+TR1. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      008EH  1
+WDT_CONTR. . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00C1H  1
+PX0. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B8H  1
+PX1. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00BAH  1
+PCA_PWM0 . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00F2H  1
+PCA_PWM1 . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00F3H  1
+PCA_PWM2 . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00F4H  1
+P1ASF. . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   009DH  1
+DPH. . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0083H  1
+GPIO_InitTypeDef . . . . . . . . . . .  TYPEDEF  -----  STRUCT   -----  2
+  GPIO_Mode. . . . . . . . . . . . . .  MEMBER   -----  U_CHAR   0000H  1
+  GPIO_Pin . . . . . . . . . . . . . .  MEMBER   -----  U_CHAR   0001H  1
+T3T4M. . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00D1H  1
+T4T3M. . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00D1H  1
+Motor_PWM_Init . . . . . . . . . . . .  PUBLIC   CODE   PROC     0000H  -----
+  TIM_InitStructure. . . . . . . . . .  AUTO     XDATA  STRUCT   0000H  8
+ADC_RESL . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00BEH  1
+DPL. . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0082H  1
+SPSTAT . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00CDH  1
+S2BUF. . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   009BH  1
+S3BUF. . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00ADH  1
+S4BUF. . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0085H  1
+REN. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      009CH  1
+S2CON. . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   009AH  1
+S3CON. . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00ACH  1
+S4CON. . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0084H  1
+SADEN. . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00B9H  1
+SADDR. . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00A9H  1
+IAP_TRIG . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00C6H  1
+AUXR1. . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00A2H  1
+F0 . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00D5H  1
+INT_CLKO . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   008FH  1
+F1 . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00D1H  1
+_LoadPWM . . . . . . . . . . . . . . .  STATIC   CODE   PROC     0000H  -----
+  i. . . . . . . . . . . . . . . . . .  * REG *  DATA   U_INT    0006H  2
+  j. . . . . . . . . . . . . . . . . .  * REG *  DATA   U_INT    0004H  2
+PWM_high . . . . . . . . . . . . . . .  STATIC   XDATA  U_INT    0002H  2
+TURNLEFT . . . . . . . . . . . . . . .  E_CONST  -----  U_CHAR   -----  1
+PSW. . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00D0H  1
+uint32_t . . . . . . . . . . . . . . .  TYPEDEF  -----  U_LONG   -----  4
+CCF0 . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00D8H  1
+CCF1 . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00D9H  1
+SPDAT. . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00CFH  1
+P0M0 . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0094H  1
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    448    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =      4      13
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+C51 COMPILER V9.60.7.0   A14_MOTOR                                                         12/19/2023 11:49:39 PAGE 16  
+
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

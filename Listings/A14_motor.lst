@@ -1,0 +1,165 @@
+C51 COMPILER V9.60.7.0   A14_MOTOR                                                         12/20/2023 11:03:56 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE A14_MOTOR
+OBJECT MODULE PLACED IN .\Objects\A14_motor.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE Driver\A14_motor.c LARGE OPTIMIZE(8,SPEED) BROWSE INCDIR(.\User;.\System
+                    -) DEBUG OBJECTEXTEND PRINT(.\Listings\A14_motor.lst) TABS(2) OBJECT(.\Objects\A14_motor.obj)
+
+line level    source
+
+   1          #include "global.h"                  // Device heade
+   2          
+   3          sbit  PWMB_PIN = P0^4;    //定义PWM输出引脚。
+   4          sbit  PWMA_PIN = P0^5;    //定义PWM输出引脚。
+   5          static uint16_t   PWM_high,PWM_low; //中间变量，用户请勿修改。
+   6          /**
+   7            * @brief 马达GPIO初始化
+   8            * @param  None
+   9            * @retval None
+  10            */
+  11          static void Motor_GPIO_Init(void) {
+  12   1      
+  13   1        GPIO_InitTypeDef GPIO_InitStructure;
+  14   1      
+  15   1        GPIO_InitStructure.GPIO_Mode = GPIO_OUT_PP;
+  16   1        GPIO_InitStructure.GPIO_Pin = Left_MotoA_Pin | Left_MotoB_Pin | Right_MotoA_Pin | Right_MotoB_Pin | Right
+             -_MotoPWM_Pin | Left_MotoPWM_Pin;
+  17   1        GPIO_Init(Motor_Port, &GPIO_InitStructure);
+  18   1      
+  19   1        GPIO_SetBits(Motor_Port, Left_MotoA_Pin | Left_MotoB_Pin | Right_MotoA_Pin | Right_MotoB_Pin | Right_Moto
+             -PWM_Pin | Left_MotoPWM_Pin);
+  20   1      }
+  21          
+  22          void Motor_PWM_Init(void) {
+  23   1        TIM_InitTypeDef   TIM_InitStructure;          //结构定义
+  24   1      
+  25   1        TIM_InitStructure.TIM_Mode      = TIM_16BitAutoReload;  //指定工作模式,   TIM_16BitAutoReload,TIM_16Bit,TI
+             -M_8BitAutoReload,TIM_16BitAutoReloadNoMask
+  26   1        TIM_InitStructure.TIM_Polity    = PolityLow;      //指定中断优先级, PolityHigh,PolityLow
+  27   1        TIM_InitStructure.TIM_Interrupt = ENABLE;       //中断是否允许,   ENABLE或DISABLE
+  28   1        TIM_InitStructure.TIM_ClkSource = TIM_CLOCK_1T;     //指定时钟源,     TIM_CLOCK_1T,TIM_CLOCK_12T,TIM_CLOCK_
+             -Ext
+  29   1        TIM_InitStructure.TIM_ClkOut    = DISABLE;        //是否输出高速脉冲, ENABLE或DISABLE
+  30   1        TIM_InitStructure.TIM_Value     = 65536UL - PWM_DUTY; //初值,
+  31   1        TIM_InitStructure.TIM_Run       = ENABLE;       //是否初始化后启动定时器, ENABLE或DISABLE
+  32   1        Timer_Inilize(Timer1,&TIM_InitStructure);       //初始化    Timer0,Timer1,Timer2
+  33   1      
+  34   1        Motor_GPIO_Init();
+  35   1      }
+  36          
+  37          /**************** 计算PWM重装值函数 *******************/
+  38          static void LoadPWM(uint16_t i)
+  39          {
+  40   1        uint16_t  j;
+  41   1        j = 65536UL - PWM_DUTY + i; //计算PWM低电平时间
+  42   1        i = 65536UL - i;      //计算PWM高电平时间
+  43   1        EA = 0;
+  44   1        PWM_high = i; //装载PWM高电平时间
+  45   1        PWM_low  = j; //装载PWM低电平时间
+  46   1        EA = 1;
+  47   1      }
+  48          
+  49          /********************* Timer1中断函数************************/
+  50          void timer1_int (void) interrupt 3
+C51 COMPILER V9.60.7.0   A14_MOTOR                                                         12/20/2023 11:03:56 PAGE 2   
+
+  51          {
+  52   1        if(PWMB_PIN)
+  53   1        {
+  54   2          TH1 = (uint8_t)(PWM_high >> 8); //如果是输出低电平，则装载高电平时间。
+  55   2          TL1 = (uint8_t)PWM_high;
+  56   2          PWMB_PIN = 0;
+  57   2          PWMA_PIN = 0;
+  58   2        }
+  59   1        else
+  60   1        {
+  61   2          TH1 = (uint8_t)(PWM_low >> 8);  //如果是输出高电平，则装载低电平时间。
+  62   2          TL1 = (uint8_t)PWM_low;
+  63   2          PWMB_PIN = 1;
+  64   2          PWMA_PIN = 1;
+  65   2        }
+  66   1      }
+  67          
+  68          /********************* Timer3中断函数************************/
+  69          /*STC15F2K没有定时器3*/
+  70          //void timer3_int (void) interrupt 19
+  71          //{
+  72          //
+  73          //  P1 = 0;
+  74          //  if(PWMA_PIN)
+  75          //  {
+  76          //    T3H = (uint8_t)(PWM_high >> 8); //如果是输出低电平，则装载高电平时间。
+  77          //    T3L = (uint8_t)PWM_high;
+  78          //    PWMA_PIN = 0;
+  79          //  }
+  80          //  else
+  81          //  {
+  82          //    T3H = (uint8_t)(PWM_low >> 8);  //如果是输出高电平，则装载低电平时间。
+  83          //    T3L = (uint8_t)PWM_low;
+  84          //    PWMA_PIN = 1;
+  85          //  }
+  86          //}
+  87          
+  88          void Motor_Run(uint8_t dir, uint16_t speed) {
+  89   1        speed < PWM_HIGH_MIN ?      speed = PWM_HIGH_MIN:speed; //如果写入小于最小占空比数据，则强制为最小占空比。
+  90   1        speed > PWM_HIGH_MAX ?      speed = PWM_HIGH_MAX:speed; //如果写入大于最大占空比数据，则强制为最大占空比。
+  91   1      
+  92   1        switch (dir) {
+  93   2          case FORWARD:
+  94   2              LeftMotor_Go();
+  95   2              RightMotor_Go();
+  96   2              LoadPWM(speed);
+  97   2              break;
+  98   2          case BACKWARDS:
+  99   2              LeftMotor_Back();
+ 100   2              RightMotor_Back();
+ 101   2              LoadPWM(speed);
+ 102   2              break;
+ 103   2          case TURNLEFT:
+ 104   2              LeftMotor_Stop();
+ 105   2              RightMotor_Go();
+ 106   2              LoadPWM(speed);
+ 107   2              break;
+ 108   2          case TURNRIGHT:
+ 109   2              LeftMotor_Go();
+ 110   2              RightMotor_Stop();
+ 111   2              LoadPWM(speed);
+ 112   2              break;
+C51 COMPILER V9.60.7.0   A14_MOTOR                                                         12/20/2023 11:03:56 PAGE 3   
+
+ 113   2          case SPINTURNLEFT:
+ 114   2              LeftMotor_Back();
+ 115   2              RightMotor_Go();
+ 116   2              LoadPWM(speed);
+ 117   2              break;
+ 118   2          case SPINTURNRIGHT:
+ 119   2              LeftMotor_Go();
+ 120   2              RightMotor_Back();
+ 121   2              LoadPWM(speed);
+ 122   2              break;
+ 123   2          case STOP:
+ 124   2              LeftMotor_Stop();
+ 125   2              RightMotor_Stop();
+ 126   2              LoadPWM(speed);
+ 127   2              break;
+ 128   2          default:
+ 129   2              LeftMotor_Stop();
+ 130   2              RightMotor_Stop();
+ 131   2              break;
+ 132   2        }
+ 133   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    445    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =      4      13
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

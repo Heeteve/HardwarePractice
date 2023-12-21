@@ -1,0 +1,56 @@
+C51 COMPILER V9.60.7.0   A14_SERVO                                                         11/30/2023 20:59:20 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE A14_SERVO
+OBJECT MODULE PLACED IN .\Objects\A14_servo.obj
+COMPILER INVOKED BY: D:\keilC51\C51\BIN\C51.EXE Driver\A14_servo.c LARGE OPTIMIZE(8,SPEED) BROWSE INCDIR(.\User;.\System
+                    -) DEBUG OBJECTEXTEND PRINT(.\Listings\A14_servo.lst) TABS(2) OBJECT(.\Objects\A14_servo.obj)
+
+line level    source
+
+   1          #include "global.h"                  // Device heade
+   2          
+   3          void Servo_GPIO_Init(void) {
+   4   1      
+   5   1        GPIO_InitTypeDef GPIO_InitStructure;
+   6   1        
+   7   1        GPIO_InitStructure.GPIO_Mode = GPIO_OUT_PP;
+   8   1        GPIO_InitStructure.GPIO_Pin = Servo1_Pin;
+   9   1        GPIO_Init(Servo1_Port, &GPIO_InitStructure);
+  10   1        
+  11   1        GPIO_InitStructure.GPIO_Mode = GPIO_OUT_PP;
+  12   1        GPIO_InitStructure.GPIO_Pin = Servo2_Pin;
+  13   1        GPIO_Init(Servo2_Port, &GPIO_InitStructure);
+  14   1      }
+  15          /**
+  16            * @brief  ÉèÖÃ¶æ»ú½Ç¶È
+  17            * @param  param1 GPIO_PROT, param2 GPIO_PIN, param3 Angle
+  18            * @retval None
+  19            */
+  20          void Set_Servo(uint8_t GPIOx, uint8_t GPIO_Pin, uint16_t angle) {
+  21   1        uint8_t i;
+  22   1        if(angle > 180) return;
+  23   1        angle = angle * 11 +500;//map 0-180, 500-2480
+  24   1        EA = 0;
+  25   1        for(i=0; i<5; i++) {
+  26   2          GPIO_SetBits(GPIOx, GPIO_Pin);
+  27   2          DelayUs(angle);
+  28   2          GPIO_ResetBits(GPIOx, GPIO_Pin);
+  29   2          DelayUs(20000 - angle);
+  30   2        }
+  31   1        EA = 1;
+  32   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    165    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----       7
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

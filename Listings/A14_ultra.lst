@@ -1,0 +1,105 @@
+C51 COMPILER V9.60.7.0   A14_ULTRA                                                         12/20/2023 11:03:56 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE A14_ULTRA
+OBJECT MODULE PLACED IN .\Objects\A14_ultra.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE Driver\A14_ultra.c LARGE OPTIMIZE(8,SPEED) BROWSE INCDIR(.\User;.\System
+                    -) DEBUG OBJECTEXTEND PRINT(.\Listings\A14_ultra.lst) TABS(2) OBJECT(.\Objects\A14_ultra.obj)
+
+line level    source
+
+   1          #include "global.h" // Device header
+   2          
+   3          void Ultrasound_Init(void) {
+   4   1          GPIO_InitTypeDef GPIO_InitStructure;
+   5   1      
+   6   1          GPIO_InitStructure.GPIO_Pin = Ultrasound_TRIG_PIN;
+   7   1          GPIO_InitStructure.GPIO_Mode = GPIO_OUT_PP;
+   8   1          GPIO_Init(Ultrasound_TRIG_PORT, &GPIO_InitStructure);
+   9   1      
+  10   1          GPIO_InitStructure.GPIO_Pin = Ultrasound_ECHO_PIN;
+  11   1          GPIO_InitStructure.GPIO_Mode = GPIO_HighZ;
+  12   1          GPIO_Init(Ultrasound_ECHO_PORT, &GPIO_InitStructure);
+  13   1      }
+  14          
+  15          void Ultrasound_PCA_SoftTimer_Init(void) {
+  16   1          PCA_InitTypeDef PCA_InitStructure;
+  17   1      
+  18   1          PCA_InitStructure.PCA_Clock = PCA_Clock_12T;
+  19   1          PCA_InitStructure.PCA_Mode = PCA_Mode_SoftTimer;
+  20   1          PCA_InitStructure.PCA_Interrupt_Mode = DISABLE;
+  21   1          PCA_Init(PCA0, &PCA_InitStructure);
+  22   1      }
+  23          
+  24          /**
+  25           * @brief  获取超声波测距距离
+  26           * @param  None
+  27           * @retval 返回距离CM，-1 没到测距周期，-2 未检测到超声波，-3 测距超时
+  28           */
+  29          float Get_DistanceValue(void) {
+  30   1          static uint32_t oldticks;
+  31   1          uint32_t ticks = time_GetTicks();
+  32   1          uint16_t t_microsecond;
+  33   1          char xdata disBuf[16]; /*显存*/
+  34   1          float t_distance = 0;
+  35   1      
+  36   1          if (ticks - oldticks < 100) return -1;
+  37   1          oldticks = ticks;
+  38   1          sprintf(disBuf, "%d", oldticks);
+  39   1          OLED_ShowString(2,1,disBuf);
+  40   1          GPIO_SetBits(Ultrasound_TRIG_PORT, Ultrasound_TRIG_PIN); /*发送触发信号*/
+  41   1          DelayMs(1);
+  42   1          GPIO_ResetBits(Ultrasound_TRIG_PORT, Ultrasound_TRIG_PIN);
+  43   1      
+  44   1          while (!GPIO_ReadInputDataBit(Ultrasound_ECHO_PORT, Ultrasound_ECHO_PIN)) {
+  45   2              ticks = time_GetTicks();
+  46   2              if (ticks - oldticks > 100) {
+  47   3                  oldticks = ticks;
+  48   3                  return -2;
+  49   3              }
+  50   2          } /*等待Echo信号的高电平*/
+  51   1      
+  52   1          CH = 0; //清除PCA计数器
+  53   1          CL = 0;
+  54   1          CR = 1; //启动PCA计数器
+C51 COMPILER V9.60.7.0   A14_ULTRA                                                         12/20/2023 11:03:56 PAGE 2   
+
+  55   1      
+  56   1          while (GPIO_ReadInputDataBit(Ultrasound_ECHO_PORT, Ultrasound_ECHO_PIN)) {
+  57   2              ticks = time_GetTicks();
+  58   2              if (ticks - oldticks > 100) {
+  59   3                  oldticks = ticks;
+  60   3                  return -3;
+  61   3              }
+  62   2          } /*等待Echo信号的低电平*/
+  63   1      
+  64   1          t_microsecond = CH;
+  65   1          t_microsecond <<= 8;
+  66   1          t_microsecond |= CL;
+  67   1          CH = 0;
+  68   1          CL = 0;
+  69   1          CR = 0;
+  70   1      
+  71   1          /*距离计算：程序设定PCA以系统时钟的12分频进行计数
+  72   1            在不考虑温度的情况下超声波传输速度为每微秒0.034厘米
+  73   1          */
+  74   1          t_distance = (t_microsecond * ((float)1000000 / (CFG_SYSFREQ / 12) * 0.034)) / 2;
+  75   1          sprintf(disBuf, "%0.1fCM", t_distance);
+  76   1          OLED_ShowString(1, 1, disBuf);
+  77   1      
+  78   1          return t_distance;
+  79   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    561    ----
+   CONSTANT SIZE    =     11    ----
+   XDATA SIZE       =      4      34
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

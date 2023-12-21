@@ -1,0 +1,194 @@
+C51 COMPILER V9.60.7.0   APP                                                               11/30/2023 20:59:20 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE APP
+OBJECT MODULE PLACED IN .\Objects\app.obj
+COMPILER INVOKED BY: D:\keilC51\C51\BIN\C51.EXE User\app.c LARGE OPTIMIZE(8,SPEED) BROWSE INCDIR(.\User;.\System) DEBUG 
+                    -OBJECTEXTEND PRINT(.\Listings\app.lst) TABS(2) OBJECT(.\Objects\app.obj)
+
+line level    source
+
+   1          #include "global.h"                  // Device heade
+   2          
+   3          
+   4          
+   5          void IR_FourWayTracking(void) {
+   6   1        uint16_t S1 = 0, S2 = 0, S3 = 0, S4 = 0;
+   7   1        Get_TrackSensor_State(&S1, &S2, &S3, &S4);
+   8   1      
+   9   1        if(S1 == 1 && S2 == 0 && S3 == 0 && S4 == 1) {
+  10   2          Motor_Run(FORWARD, PWM_HIGH_MAX);//全速
+  11   2        } else if(S2 == 0 && S3 == 1) {
+  12   2          Motor_Run(TURNLEFT, PWM_HIGH_MAX);//全速
+  13   2        } else if(S2 == 1 && S3 == 0) {
+  14   2          Motor_Run(TURNRIGHT, PWM_HIGH_MAX);//全速
+  15   2        } else if(S1 == 0 && S4 == 1) {
+  16   2          Motor_Run(TURNLEFT, PWM_HIGH_MAX);//全速
+  17   2        } else if(S1 == 1 && S4 == 0) {
+  18   2          Motor_Run(TURNRIGHT, PWM_HIGH_MAX);//全速
+  19   2        }
+  20   1      }
+  21          
+  22          void IR_Avoid(void) {
+  23   1        uint16_t S5 = 0, S6 = 0;
+  24   1        Get_AvoidSensor_State(&S5, &S6);
+  25   1        if(S5 == 1 && S6 == 1) {
+  26   2          Motor_Run(FORWARD, PWM_HIGH_MAX * 0.3);//速度30%
+  27   2        }
+  28   1        if(S5 == 0 && S6 == 1) {
+  29   2          Motor_Run(TURNRIGHT, PWM_HIGH_MAX * 0.9);//速度90%
+  30   2        }
+  31   1        if(S5 == 1 && S6 == 0) {
+  32   2          Motor_Run(TURNLEFT, PWM_HIGH_MAX * 0.9);//速度90%
+  33   2        }
+  34   1        if(S5 == 0 && S6 == 0) {
+  35   2          Motor_Run(SPINTURNLEFT, PWM_HIGH_MAX * 0.9);//速度90%
+  36   2        }
+  37   1      }
+  38          
+  39          float Ultrasound_Avoid(float triggerDistance) {
+  40   1        float distance;
+  41   1        distance = Get_DistanceValue();
+  42   1        if(distance < 0) return -1;
+  43   1        if(distance < triggerDistance) {/*测距距离小于设定的触发距离*/
+  44   2          Motor_Run(STOP, PWM_HIGH_MAX * 0.3);//速度30%
+  45   2          DelayMs(100);
+  46   2          Motor_Run(BACKWARDS, PWM_HIGH_MAX * 0.3);//速度30%
+  47   2          DelayMs(1000);
+  48   2          Motor_Run(STOP, PWM_HIGH_MAX * 0.3);//速度30%
+  49   2          DelayMs(100);
+  50   2          Motor_Run(SPINTURNLEFT, PWM_HIGH_MAX * 0.35);//速度35%
+  51   2          DelayMs(1000);
+  52   2          Motor_Run(STOP, PWM_HIGH_MAX * 0.3);//速度30%
+  53   2          DelayMs(100);
+  54   2        }
+C51 COMPILER V9.60.7.0   APP                                                               11/30/2023 20:59:20 PAGE 2   
+
+  55   1        return distance;
+  56   1      }
+  57          
+  58          void Servo_Avoid(float triggerDistance) {
+  59   1        char xdata disBuf[16];/*显存*/
+  60   1        float F_distance, L_distance, R_distance;
+  61   1        F_distance = Get_DistanceValue();
+  62   1        if(F_distance < 0) return;
+  63   1        if(F_distance < triggerDistance) {/*测距距离小于设定的触发距离*/
+  64   2          Motor_Run(STOP, PWM_HIGH_MAX * 0.3);//速度30%
+  65   2          Buzzer_TurnOn(0);
+  66   2          DelayMs(200);
+  67   2          Buzzer_TurnOn(1);/*停车报警*/
+  68   2          
+  69   2          Set_Servo(Servo2_Port, Servo2_Pin, 0);
+  70   2          DelayMs(500);/*检测左边距离*/
+  71   2          do {
+  72   3            L_distance = Get_DistanceValue();
+  73   3          } while(L_distance < 0);
+  74   2          
+  75   2          Set_Servo(Servo2_Port, Servo2_Pin, 90);/*舵机回中*/
+  76   2          DelayMs(100);
+  77   2          
+  78   2          Set_Servo(Servo2_Port, Servo2_Pin, 180);
+  79   2          DelayMs(500);/*检测右边距离*/
+  80   2          do {
+  81   3            R_distance = Get_DistanceValue();
+  82   3          } while(R_distance < 0);
+  83   2          Set_Servo(Servo2_Port, Servo2_Pin, 90);/*舵机回中*/
+  84   2          sprintf(disBuf, "%0.1fCM %0.1fCM", L_distance, R_distance);
+  85   2          OLED_ShowString(3, 1, disBuf);
+  86   2          if(L_distance > R_distance) {
+  87   3            Motor_Run(BACKWARDS, PWM_HIGH_MAX * 0.3);//速度30%
+  88   3            DelayMs(1000);
+  89   3            Motor_Run(STOP, PWM_HIGH_MAX * 0.3);//速度30%
+  90   3            DelayMs(100);
+  91   3            Motor_Run(SPINTURNLEFT, PWM_HIGH_MAX * 0.5);//速度50%
+  92   3            DelayMs(600);
+  93   3            Motor_Run(STOP, PWM_HIGH_MAX * 0.3);//速度30%
+  94   3            DelayMs(100);
+  95   3          }else {
+  96   3            Motor_Run(BACKWARDS, PWM_HIGH_MAX * 0.3);//速度30%
+  97   3            DelayMs(1000);
+  98   3            Motor_Run(STOP, PWM_HIGH_MAX * 0.3);//速度30%
+  99   3            DelayMs(100);
+ 100   3            Motor_Run(SPINTURNRIGHT, PWM_HIGH_MAX * 0.5);//速度50%
+ 101   3            DelayMs(600);
+ 102   3            Motor_Run(STOP, PWM_HIGH_MAX * 0.3);//速度30%
+ 103   3            DelayMs(100);
+ 104   3          }
+ 105   2        }
+ 106   1      }
+ 107          
+ 108          
+ 109          uint8_t Key_Task(void) {
+ 110   1        static uint32_t oldticks;
+ 111   1        uint16_t ticks = time_GetTicks();
+ 112   1        uint8_t key_code, ret;
+ 113   1        static uint8_t old_code, state = 0;
+ 114   1        switch (state)
+ 115   1        {
+ 116   2          case 0:
+C51 COMPILER V9.60.7.0   APP                                                               11/30/2023 20:59:20 PAGE 3   
+
+ 117   2            old_code = ScanKeyCode();
+ 118   2            if(old_code == KEY_NONE) {
+ 119   3              ret = KEY_NONE; 
+ 120   3              break;
+ 121   3            }
+ 122   2            oldticks = ticks;
+ 123   2            state = 1;
+ 124   2            break;
+ 125   2          case 1: /*de-bounce*/
+ 126   2            if(ticks - oldticks < 20) break;
+ 127   2            key_code = ScanKeyCode();
+ 128   2            if(key_code == old_code) {
+ 129   3              ret = KEY_PRESSED;
+ 130   3              oldticks = ticks;
+ 131   3              state = 2;
+ 132   3            }else {
+ 133   3              state = 0;
+ 134   3            }
+ 135   2            break;
+ 136   2          case 2: /*Check for repeat*/
+ 137   2            key_code = ScanKeyCode();
+ 138   2            if(key_code == KEY_NONE) {
+ 139   3              oldticks = ticks;
+ 140   3              state = 3;
+ 141   3            }
+ 142   2            else {
+ 143   3              if(ticks - oldticks > 250) {
+ 144   4                oldticks = ticks;
+ 145   4                ret = KEY_REPEATED;
+ 146   4                state = 3;
+ 147   4              }
+ 148   3            }
+ 149   2            break;
+ 150   2          case 3: /*check for release*/
+ 151   2            if(ticks - oldticks < 20) break;
+ 152   2            key_code = ScanKeyCode();
+ 153   2            if(key_code == KEY_NONE) {
+ 154   3              ret = KEY_RELEASED;
+ 155   3              state = 0;
+ 156   3            }
+ 157   2            else {
+ 158   3              oldticks = ticks;     
+ 159   3            }
+ 160   2            break;
+ 161   2          default: ret = KEY_NONE;
+ 162   2            break;
+ 163   2        }
+ 164   1      
+ 165   1        return ret;
+ 166   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1394    ----
+   CONSTANT SIZE    =     16    ----
+   XDATA SIZE       =      6      56
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

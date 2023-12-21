@@ -1,0 +1,182 @@
+C51 COMPILER V9.60.7.0   RICHBOT_TIMER                                                     12/20/2023 11:03:57 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE RICHBOT_TIMER
+OBJECT MODULE PLACED IN .\Objects\RICHBOT_timer.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE System\RICHBOT_timer.c LARGE OPTIMIZE(8,SPEED) BROWSE INCDIR(.\User;.\Sy
+                    -stem) DEBUG OBJECTEXTEND PRINT(.\Listings\RICHBOT_timer.lst) TABS(2) OBJECT(.\Objects\RICHBOT_timer.obj)
+
+line level    source
+
+   1          #include "global.h"
+   2          
+   3          /*System ticks*/
+   4          static volatile unsigned long idata g_sys_ticks;
+   5          static unsigned int code g_timer0_init_val = 65536UL - (CFG_SYSFREQ/12/1000);
+   6          /*Timer 0 as system tick timer. 1KHZ */
+   7          void SysTick_Init(void) {
+   8   1        TIM_InitTypeDef   TIM_InitStructure;          //½á¹¹¶¨Òå
+   9   1        TIM_InitStructure.TIM_Mode      = TIM_16Bit;      //Ö¸¶¨¹¤×÷Ä£Ê½,   TIM_16BitAutoReload,TIM_16Bit,TIM_8BitAu
+             -toReload,TIM_16BitAutoReloadNoMask
+  10   1        TIM_InitStructure.TIM_Polity    = PolityHigh;     //Ö¸¶¨ÖÐ¶ÏÓÅÏÈ¼¶, PolityHigh,PolityLow
+  11   1        TIM_InitStructure.TIM_Interrupt = ENABLE;       //ÖÐ¶ÏÊÇ·ñÔÊÐí,   ENABLE»òDISABLE
+  12   1        TIM_InitStructure.TIM_ClkSource = TIM_CLOCK_12T;      //Ö¸¶¨Ê±ÖÓÔ´,     TIM_CLOCK_1T,TIM_CLOCK_12T,TIM_CLOCK
+             -_Ext
+  13   1        TIM_InitStructure.TIM_ClkOut    = DISABLE;        //ÊÇ·ñÊä³ö¸ßËÙÂö³å, ENABLE»òDISABLE
+  14   1        TIM_InitStructure.TIM_Value     = g_timer0_init_val;  //³õÖµ,
+  15   1        TIM_InitStructure.TIM_Run       = ENABLE;       //ÊÇ·ñ³õÊ¼»¯ºóÆô¶¯¶¨Ê±Æ÷, ENABLE»òDISABLE
+  16   1        Timer_Inilize(Timer0,&TIM_InitStructure);       //³õÊ¼»¯Timer0    Timer0,Timer1,Timer2
+  17   1      }
+  18          
+  19          void timer0_ISR(void) interrupt 1
+  20          {
+  21   1        TL0 = g_timer0_init_val & 0xff;
+  22   1        TH0 = g_timer0_init_val >> 8;
+  23   1        g_sys_ticks ++;
+  24   1      }
+  25          
+  26          uint32_t time_GetTicks(void)
+  27          {
+  28   1        unsigned long ticks;
+  29   1        EA = 0;
+  30   1        ticks = g_sys_ticks;
+  31   1        EA = 1;
+  32   1        return ticks;
+  33   1      }
+  34          
+  35          #if (CFG_SYSFREQ == 22118400 && INS_VER == INS_VER_Y5)
+  36          static void Delay1us()
+  37          {
+  38   1        unsigned char i;
+  39   1      
+  40   1        i = 3;
+  41   1        while (--i);
+  42   1      }
+  43          static void Delay10us()
+  44          {
+  45   1        unsigned char i;
+  46   1      
+  47   1        _nop_();
+  48   1        _nop_();
+  49   1        _nop_();
+  50   1        i = 52;
+  51   1        while (--i);
+  52   1      }
+C51 COMPILER V9.60.7.0   RICHBOT_TIMER                                                     12/20/2023 11:03:57 PAGE 2   
+
+  53          static void Delay100us()
+  54          {
+  55   1        unsigned char i, j;
+  56   1      
+  57   1        i = 3;
+  58   1        j = 26;
+  59   1        do
+  60   1        {
+  61   2          while (--j);
+  62   2        } while (--i);
+  63   1      }
+  64          #endif
+  65          
+  66          void DelayUs(uint16_t us)
+  67          {
+  68   1        for(;us>=100;us-=100) Delay100us();
+  69   1        for(;us>=10;us-=10) Delay10us();
+  70   1        for(;us>0;us--) Delay1us();
+  71   1      }
+  72          
+  73          void DelayMs(uint16_t ms) {
+  74   1        uint32_t oldticks;
+  75   1        uint32_t ticks;
+  76   1        oldticks  = time_GetTicks();
+  77   1        do {
+  78   2          ticks = time_GetTicks();
+  79   2        } while (ticks - oldticks < ms);
+  80   1      }
+  81          
+  82          
+  83          int Timer_Inilize(uint8_t TIM, TIM_InitTypeDef *TIMx)
+  84          {
+  85   1        if(TIM > Timer3)  return 1; //¿Õ²Ù×÷
+  86   1      
+  87   1        if(TIM == Timer0)
+  88   1        {
+  89   2          TR0 = 0;    //Í£Ö¹¼ÆÊý
+  90   2          if(TIMx->TIM_Interrupt == ENABLE)   ET0 = 1;  //ÔÊÐíÖÐ¶Ï
+  91   2          else                  ET0 = 0;  //½ûÖ¹ÖÐ¶Ï
+  92   2          if(TIMx->TIM_Polity == PolityHigh)    PT0 = 1;  //¸ßÓÅÏÈ¼¶ÖÐ¶Ï
+  93   2          else                  PT0 = 0;  //µÍÓÅÏÈ¼¶ÖÐ¶Ï
+  94   2          if(TIMx->TIM_Mode >  TIM_16BitAutoReloadNoMask) return 2; //´íÎó
+  95   2          TMOD = (TMOD & ~0x03) | TIMx->TIM_Mode; //¹¤×÷Ä£Ê½,0: 16Î»×Ô¶¯ÖØ×°, 1: 16Î»¶¨Ê±/¼ÆÊý, 2: 8Î»×Ô¶¯ÖØ×°, 3:
+             - 16Î»×Ô¶¯ÖØ×°, ²»¿ÉÆÁ±ÎÖÐ¶Ï
+  96   2          if(TIMx->TIM_ClkSource == TIM_CLOCK_12T)  AUXR &= ~0x80;  //12T
+  97   2          if(TIMx->TIM_ClkSource == TIM_CLOCK_1T)   AUXR |=  0x80;  //1T
+  98   2          if(TIMx->TIM_ClkSource == TIM_CLOCK_Ext)  TMOD |=  0x04;  //¶ÔÍâ¼ÆÊý»ò·ÖÆµ
+  99   2          else                    TMOD &= ~0x04;  //¶¨Ê±
+ 100   2          if(TIMx->TIM_ClkOut == ENABLE)  INT_CLKO |=  0x01;  //Êä³öÊ±ÖÓ
+ 101   2          else              INT_CLKO &= ~0x01;  //²»Êä³öÊ±ÖÓ
+ 102   2      
+ 103   2          TH0 = (uint8_t)(TIMx->TIM_Value >> 8);
+ 104   2          TL0 = (uint8_t)TIMx->TIM_Value;
+ 105   2          if(TIMx->TIM_Run == ENABLE) TR0 = 1;  //¿ªÊ¼ÔËÐÐ
+ 106   2          return  0;    //³É¹¦
+ 107   2        }
+ 108   1      
+ 109   1        if(TIM == Timer1)
+ 110   1        {
+ 111   2          TR1 = 0;    //Í£Ö¹¼ÆÊý
+ 112   2          if(TIMx->TIM_Interrupt == ENABLE)   ET1 = 1;  //ÔÊÐíÖÐ¶Ï
+ 113   2          else                  ET1 = 0;  //½ûÖ¹ÖÐ¶Ï
+C51 COMPILER V9.60.7.0   RICHBOT_TIMER                                                     12/20/2023 11:03:57 PAGE 3   
+
+ 114   2          if(TIMx->TIM_Polity == PolityHigh)    PT1 = 1;  //¸ßÓÅÏÈ¼¶ÖÐ¶Ï
+ 115   2          else                  PT1 = 0;  //µÍÓÅÏÈ¼¶ÖÐ¶Ï
+ 116   2          if(TIMx->TIM_Mode >= TIM_16BitAutoReloadNoMask) return 2; //´íÎó
+ 117   2          TMOD = (TMOD & ~0x30) | (TIMx->TIM_Mode << 4);  //¹¤×÷Ä£Ê½,0: 16Î»×Ô¶¯ÖØ×°, 1: 16Î»¶¨Ê±/¼ÆÊý, 2: 8Î»×Ô¶¯Ö
+             -Ø×°
+ 118   2          if(TIMx->TIM_ClkSource == TIM_CLOCK_12T)  AUXR &= ~0x40;  //12T
+ 119   2          if(TIMx->TIM_ClkSource == TIM_CLOCK_1T)   AUXR |=  0x40;  //1T
+ 120   2          if(TIMx->TIM_ClkSource == TIM_CLOCK_Ext)  TMOD |=  0x40;  //¶ÔÍâ¼ÆÊý»ò·ÖÆµ
+ 121   2          else                    TMOD &= ~0x40;  //¶¨Ê±
+ 122   2          if(TIMx->TIM_ClkOut == ENABLE)  INT_CLKO |=  0x02;  //Êä³öÊ±ÖÓ
+ 123   2          else              INT_CLKO &= ~0x02;  //²»Êä³öÊ±ÖÓ
+ 124   2      
+ 125   2          TH1 = (uint8_t)(TIMx->TIM_Value >> 8);
+ 126   2          TL1 = (uint8_t)TIMx->TIM_Value;
+ 127   2          if(TIMx->TIM_Run == ENABLE) TR1 = 1;  //¿ªÊ¼ÔËÐÐ
+ 128   2          return  0;    //³É¹¦
+ 129   2        }
+ 130   1      
+ 131   1        if(TIM == Timer2)
+ 132   1        {
+ 133   2          AUXR &= ~(1<<4);  //Í£Ö¹¼ÆÊý
+ 134   2          if(TIMx->TIM_Interrupt == ENABLE)     IE2  |=  (1<<2);  //ÔÊÐíÖÐ¶Ï
+ 135   2          else                    IE2  &= ~(1<<2);  //½ûÖ¹ÖÐ¶Ï
+ 136   2          if(TIMx->TIM_ClkSource >  TIM_CLOCK_Ext)  return 2;
+ 137   2          if(TIMx->TIM_ClkSource == TIM_CLOCK_12T)  AUXR &= ~(1<<2);  //12T
+ 138   2          if(TIMx->TIM_ClkSource == TIM_CLOCK_1T)   AUXR |=  (1<<2);  //1T
+ 139   2          if(TIMx->TIM_ClkSource == TIM_CLOCK_Ext)  AUXR |=  (1<<3);  //¶ÔÍâ¼ÆÊý»ò·ÖÆµ
+ 140   2          else                    AUXR &= ~(1<<3);  //¶¨Ê±
+ 141   2          if(TIMx->TIM_ClkOut == ENABLE)  INT_CLKO |=  0x04;  //Êä³öÊ±ÖÓ
+ 142   2          else              INT_CLKO &= ~0x04;  //²»Êä³öÊ±ÖÓ
+ 143   2      
+ 144   2          T2H = (uint8_t)(TIMx->TIM_Value >> 8);
+ 145   2          T2L = (uint8_t)TIMx->TIM_Value;
+ 146   2          if(TIMx->TIM_Run == ENABLE) AUXR |=  (1<<4);  //¿ªÊ¼ÔËÐÐ
+ 147   2          return  0;    //³É¹¦
+ 148   2        }
+ 149   1        return 2; //´íÎó
+ 150   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    726    ----
+   CONSTANT SIZE    =      2    ----
+   XDATA SIZE       =   ----      18
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =      4    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

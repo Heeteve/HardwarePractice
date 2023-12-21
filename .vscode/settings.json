@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "*.y": "lex",
+        "global.h": "c",
+        "USART.C": "cpp",
+        "a14_ultra": "c"
+    }
+}

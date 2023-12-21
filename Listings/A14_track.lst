@@ -1,0 +1,54 @@
+C51 COMPILER V9.60.7.0   A14_TRACK                                                         12/20/2023 11:03:56 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE A14_TRACK
+OBJECT MODULE PLACED IN .\Objects\A14_track.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE Driver\A14_track.c LARGE OPTIMIZE(8,SPEED) BROWSE INCDIR(.\User;.\System
+                    -) DEBUG OBJECTEXTEND PRINT(.\Listings\A14_track.lst) TABS(2) OBJECT(.\Objects\A14_track.obj)
+
+line level    source
+
+   1          
+   2          #include "global.h"                  // Device heade
+   3          
+   4          void IR_Track_GPIO_Init(void) {
+   5   1          GPIO_InitTypeDef GPIO_InitStructure;
+   6   1          GPIO_InitStructure.GPIO_Pin = IR_Track_S1_PIN;
+   7   1          GPIO_InitStructure.GPIO_Mode = GPIO_HighZ;
+   8   1          GPIO_Init(IR_Track_S1_PORT, &GPIO_InitStructure);
+   9   1      
+  10   1          GPIO_InitStructure.GPIO_Pin = IR_Track_S2_PIN;
+  11   1          GPIO_InitStructure.GPIO_Mode = GPIO_HighZ;
+  12   1          GPIO_Init(IR_Track_S2_PORT, &GPIO_InitStructure);
+  13   1      
+  14   1      
+  15   1          GPIO_InitStructure.GPIO_Pin = IR_Track_S3_PIN;
+  16   1          GPIO_InitStructure.GPIO_Mode = GPIO_HighZ;
+  17   1          GPIO_Init(IR_Track_S3_PORT, &GPIO_InitStructure);
+  18   1      
+  19   1      
+  20   1          GPIO_InitStructure.GPIO_Pin = IR_Track_S4_PIN;
+  21   1          GPIO_InitStructure.GPIO_Mode = GPIO_HighZ;
+  22   1          GPIO_Init(IR_Track_S4_PORT, &GPIO_InitStructure);
+  23   1      }
+  24          
+  25          void Get_TrackSensor_State(uint16_t *p_S1, uint16_t *p_S2, uint16_t *p_S3, uint16_t *p_S4) {
+  26   1          *p_S1 = GPIO_ReadInputDataBit(IR_Track_S1_PORT, IR_Track_S1_PIN);
+  27   1          *p_S2 = GPIO_ReadInputDataBit(IR_Track_S2_PORT, IR_Track_S2_PIN);
+  28   1          *p_S3 = GPIO_ReadInputDataBit(IR_Track_S3_PORT, IR_Track_S3_PIN);
+  29   1          *p_S4 = GPIO_ReadInputDataBit(IR_Track_S4_PORT, IR_Track_S4_PIN);
+  30   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    204    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----      14
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

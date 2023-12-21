@@ -1,0 +1,80 @@
+[2023-12-19 11:49:31]	link failed !, exit code: 2
+   at unify_builder.Program.Main(String[] args_)
+---
+
+LX51 LINKER/LOCATER V4.66.100.0 - SN: K1DZC-9VW5ZC
+COPYRIGHT Copyright (C) 1995-2021, Arm Limited or its Affiliates. All rights reserved.
+"@c:\Users\HH\Desktop\大三上\硬件综合实践\#\DEMO\build\Target 1\RICHBOT_A14_51.lnp" ".\build\Target 1\Driver\A14_buzzer.o",".\build\Target 1\Driver\A14_motor.o",".\build\Target 1\Driver\A14_uart.o",".\build\Target 1\Driver\OLED.o",".\build\Target 1\System\PCA.o",".\build\Target 1\System\RICHBOT_timer.o",".\build\Target 1\System\USART.o",".\build\Target 1\System\gpio.o",".\build\Target 1\User\main.o" TO ".\build\Target 1\RICHBOT_A14_51"
+PRINT(".\build\Target 1\RICHBOT_A14_51.map") REMOVEUNUSED
+
+*** ERROR L127: UNRESOLVED EXTERNAL SYMBOL
+    SYMBOL:  _Get_TrackSensor_State
+    MODULE:  .\build\Target 1\User\main.o (MAIN)
+
+*** ERROR L127: UNRESOLVED EXTERNAL SYMBOL
+    SYMBOL:  ?_Get_TrackSensor_State?BYTE
+    MODULE:  .\build\Target 1\User\main.o (MAIN)
+
+*** ERROR L127: UNRESOLVED EXTERNAL SYMBOL
+    SYMBOL:  IR_Track_GPIO_Init
+    MODULE:  .\build\Target 1\User\main.o (MAIN)
+
+*** ERROR L128: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  IR_Track_GPIO_Init
+    MODULE:  .\build\Target 1\User\main.o (MAIN)
+    ADDRESS: 1000AC7H
+
+*** ERROR L128: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  ?_Get_TrackSensor_State?BYTE
+    MODULE:  .\build\Target 1\User\main.o (MAIN)
+    ADDRESS: 1000AE8H
+
+*** ERROR L128: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  _Get_TrackSensor_State
+    MODULE:  .\build\Target 1\User\main.o (MAIN)
+    ADDRESS: 1000B14H
+
+Program Size: data=13.3 xdata=106 const=1538 code=3969
+LX51 RUN COMPLETE.  0 WARNING(S),  6 ERROR(S)
+
+
+[2023-12-19 11:49:39]	link failed !, exit code: 2
+   at unify_builder.Program.Main(String[] args_)
+---
+
+LX51 LINKER/LOCATER V4.66.100.0 - SN: K1DZC-9VW5ZC
+COPYRIGHT Copyright (C) 1995-2021, Arm Limited or its Affiliates. All rights reserved.
+"@c:\Users\HH\Desktop\大三上\硬件综合实践\#\DEMO\build\Target 1\RICHBOT_A14_51.lnp" ".\build\Target 1\Driver\A14_buzzer.o",".\build\Target 1\Driver\A14_motor.o",".\build\Target 1\Driver\A14_uart.o",".\build\Target 1\Driver\OLED.o",".\build\Target 1\System\PCA.o",".\build\Target 1\System\RICHBOT_timer.o",".\build\Target 1\System\USART.o",".\build\Target 1\System\gpio.o",".\build\Target 1\User\main.o" TO ".\build\Target 1\RICHBOT_A14_51"
+PRINT(".\build\Target 1\RICHBOT_A14_51.map") REMOVEUNUSED
+
+*** ERROR L127: UNRESOLVED EXTERNAL SYMBOL
+    SYMBOL:  _Get_TrackSensor_State
+    MODULE:  .\build\Target 1\User\main.o (MAIN)
+
+*** ERROR L127: UNRESOLVED EXTERNAL SYMBOL
+    SYMBOL:  ?_Get_TrackSensor_State?BYTE
+    MODULE:  .\build\Target 1\User\main.o (MAIN)
+
+*** ERROR L127: UNRESOLVED EXTERNAL SYMBOL
+    SYMBOL:  IR_Track_GPIO_Init
+    MODULE:  .\build\Target 1\User\main.o (MAIN)
+
+*** ERROR L128: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  IR_Track_GPIO_Init
+    MODULE:  .\build\Target 1\User\main.o (MAIN)
+    ADDRESS: 1000B5BH
+
+*** ERROR L128: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  ?_Get_TrackSensor_State?BYTE
+    MODULE:  .\build\Target 1\User\main.o (MAIN)
+    ADDRESS: 1000B7CH
+
+*** ERROR L128: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  _Get_TrackSensor_State
+    MODULE:  .\build\Target 1\User\main.o (MAIN)
+    ADDRESS: 1000BA8H
+
+Program Size: data=13.3 xdata=106 const=1538 code=3956
+LX51 RUN COMPLETE.  0 WARNING(S),  6 ERROR(S)
+
+

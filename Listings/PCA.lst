@@ -1,0 +1,217 @@
+C51 COMPILER V9.60.7.0   PCA                                                               12/20/2023 11:03:57 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE PCA
+OBJECT MODULE PLACED IN .\Objects\PCA.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE System\PCA.c LARGE OPTIMIZE(8,SPEED) BROWSE INCDIR(.\User;.\System) DEBU
+                    -G OBJECTEXTEND PRINT(.\Listings\PCA.lst) TABS(2) OBJECT(.\Objects\PCA.obj)
+
+line level    source
+
+   1          #include  "PCA.h"
+   2          
+   3          bit         B_Capture0,B_Capture1,B_Capture2;
+   4          uint8_t     PCA0_mode,PCA1_mode,PCA2_mode;
+   5          uint16_t    CCAP0_tmp,PCA_Timer0;
+   6          uint16_t    CCAP1_tmp,PCA_Timer1;
+   7          uint16_t    CCAP2_tmp,PCA_Timer2;
+   8          
+   9          /*************  功能说明  **************
+  10          
+  11          
+  12          ******************************************/
+  13          
+  14          uint16_t  PWM0_low; //PWM输出低电平的PCA时钟脉冲个数, 用户层不可见。
+  15          uint16_t  PWM1_low; //PWM输出低电平的PCA时钟脉冲个数, 用户层不可见。
+  16          uint16_t  PWM2_low; //PWM输出低电平的PCA时钟脉冲个数, 用户层不可见。
+  17          
+  18          
+  19          //========================================================================
+  20          // 函数: void PWMn_SetHighReg(unsigned int high)
+  21          // 描述: 更新占空比数据。
+  22          // 参数: high:  占空比数据，即PWM输出高电平的PCA时钟脉冲个数。
+  23          // 返回: 无
+  24          // 版本: VER1.0
+  25          // 日期: 2013-5-15
+  26          // 备注: 
+  27          //========================================================================
+  28          void PWMn_Update(uint8_t PCA_id, uint16_t high)
+  29          {
+  30   1        if(PCA_id == PCA0)
+  31   1        {
+  32   2          if(high > PWM0_HIGH_MAX)  high = PWM0_HIGH_MAX; //如果写入大于最大占空比数据，强制为最大占空比。
+  33   2          if(high < PWM0_HIGH_MIN)  high = PWM0_HIGH_MIN; //如果写入小于最小占空比数据，则返回错误代码2。
+  34   2          CR = 0;             //停止PCA。
+  35   2          PCA_Timer0 = high;        //数据在正确范围，则装入占空比寄存器。
+  36   2          PWM0_low = PWM0_DUTY - high;  //计算并保存PWM输出低电平的PCA时钟脉冲个数。
+  37   2          CR = 1;             //启动PCA。
+  38   2        }
+  39   1        else if(PCA_id == PCA1)
+  40   1        {
+  41   2          if(high > PWM1_HIGH_MAX)  high = PWM1_HIGH_MAX; //如果写入大于最大占空比数据，强制为最大占空比。
+  42   2          if(high < PWM1_HIGH_MIN)  high = PWM1_HIGH_MIN; //如果写入小于最小占空比数据，则返回错误代码2。
+  43   2          CR = 0;             //停止PCA。
+  44   2          PCA_Timer1 = high;        //数据在正确范围，则装入占空比寄存器。
+  45   2          PWM1_low = PWM1_DUTY - high;  //计算并保存PWM输出低电平的PCA时钟脉冲个数。
+  46   2          CR = 1;             //启动PCA。
+  47   2        }
+  48   1        else if(PCA_id == PCA2)
+  49   1        {
+  50   2          if(high > PWM2_HIGH_MAX)    high = PWM2_HIGH_MAX; //如果写入大于最大占空比数据，强制为最大占空比。
+  51   2          if(high < PWM2_HIGH_MIN)    high = PWM2_HIGH_MIN; //如果写入小于最小占空比数据，则返回错误代码2。
+  52   2          CR = 0;           //停止PCA。
+  53   2          PCA_Timer2 = high;            //数据在正确范围，则装入占空比寄存器。
+  54   2          PWM2_low = PWM2_DUTY - high;        //计算并保存PWM输出低电平的PCA时钟脉冲个数。
+C51 COMPILER V9.60.7.0   PCA                                                               12/20/2023 11:03:57 PAGE 2   
+
+  55   2          CR = 1;           //启动PCA。
+  56   2        }
+  57   1      }
+  58          
+  59          
+  60          
+  61          //========================================================================
+  62          // 函数: UpdatePwm(u8 PCA_id, u8 pwm_value)
+  63          // 描述: 更新PWM值. 
+  64          // 参数: PCA_id: PCA序号. 取值 PCA0,PCA1,PCA2,PCA_Counter
+  65          //     pwm_value: pwm值, 这个值是输出低电平的时间.
+  66          // 返回: none.
+  67          // 版本: V1.0, 2012-11-22
+  68          //========================================================================
+  69          /*
+  70          void  UpdatePwm(u8 PCA_id, u8 pwm_value)
+  71          {
+  72            if(PCA_id == PCA0)    CCAP0H = pwm_value;
+  73            else if(PCA_id == PCA1) CCAP1H = pwm_value;
+  74            else if(PCA_id == PCA2) CCAP2H = pwm_value;
+  75          }
+  76          */
+  77          
+  78          //========================================================================
+  79          // 函数: void PCA_Init(PCA_id, PCA_InitTypeDef *PCAx)
+  80          // 描述: PCA初始化程序.
+  81          // 参数: PCA_id: PCA序号. 取值 PCA0,PCA1,PCA2,PCA_Counter
+  82          //     PCAx: 结构参数,请参考PCA.h里的定义.
+  83          // 返回: none.
+  84          // 版本: V1.0, 2012-11-22
+  85          //========================================================================
+  86          void  PCA_Init(uint8_t PCA_id, PCA_InitTypeDef *PCAx)
+  87          {
+  88   1        if(PCA_id > PCA_Counter)  return;   //id错误
+  89   1      
+  90   1        if(PCA_id == PCA_Counter)     //设置公用Counter
+  91   1        {
+  92   2          CR = 0;
+  93   2          CH = 0;
+  94   2          CL = 0;
+  95   2          AUXR1 = (AUXR1 & ~(3<<4)) | PCAx->PCA_IoUse;      //切换IO口
+  96   2          CMOD  = (CMOD  & ~(7<<1)) | PCAx->PCA_Clock;      //选择时钟源
+  97   2          CMOD  = (CMOD  & ~1) | (PCAx->PCA_Interrupt_Mode & 1);  //ECF
+  98   2          if(PCAx->PCA_Polity == PolityHigh)    PPCA = 1; //高优先级中断
+  99   2          else                  PPCA = 0; //低优先级中断
+ 100   2          CR = 1;
+ 101   2          return;
+ 102   2        }
+ 103   1      
+ 104   1        PCAx->PCA_Interrupt_Mode &= (3<<4) + 1;
+ 105   1        if(PCAx->PCA_Mode >= PCA_Mode_SoftTimer)  PCAx->PCA_Interrupt_Mode &= ~(3<<4);
+ 106   1      
+ 107   1        if(PCA_id == PCA0)
+ 108   1        {
+ 109   2          CCAPM0    = PCAx->PCA_Mode | PCAx->PCA_Interrupt_Mode;  //工作模式, 中断模式
+ 110   2          PCA_PWM0  = (PCA_PWM0 & ~(3<<6)) | PCAx->PCA_PWM_Wide;  //PWM宽度
+ 111   2      
+ 112   2          PCA_Timer0 = PCAx->PCA_Value;
+ 113   2          B_Capture0 = 0;
+ 114   2          PCA0_mode = PCAx->PCA_Mode;
+ 115   2          CCAP0_tmp = PCA_Timer0;
+ 116   2          CCAP0L = (uint8_t)CCAP0_tmp;      //将影射寄存器写入捕获寄存器，先写CCAP0L
+C51 COMPILER V9.60.7.0   PCA                                                               12/20/2023 11:03:57 PAGE 3   
+
+ 117   2          CCAP0H = (uint8_t)(CCAP0_tmp >> 8); //后写CCAP0H
+ 118   2        }
+ 119   1        if(PCA_id == PCA1)
+ 120   1        {
+ 121   2          CCAPM1    = PCAx->PCA_Mode | PCAx->PCA_Interrupt_Mode;
+ 122   2          PCA_PWM1  = (PCA_PWM1 & ~(3<<6)) | PCAx->PCA_PWM_Wide;
+ 123   2      
+ 124   2          PCA_Timer1 = PCAx->PCA_Value;
+ 125   2          B_Capture1 = 0;
+ 126   2          PCA1_mode = PCAx->PCA_Mode;
+ 127   2          CCAP1_tmp = PCA_Timer1;
+ 128   2          CCAP1L = (uint8_t)CCAP1_tmp;      //将影射寄存器写入捕获寄存器，先写CCAP0L
+ 129   2          CCAP1H = (uint8_t)(CCAP1_tmp >> 8); //后写CCAP0H
+ 130   2        }
+ 131   1        if(PCA_id == PCA2)
+ 132   1        {
+ 133   2          CCAPM2    = PCAx->PCA_Mode | PCAx->PCA_Interrupt_Mode;
+ 134   2          PCA_PWM2  = (PCA_PWM2 & ~(3<<6)) | PCAx->PCA_PWM_Wide;
+ 135   2      
+ 136   2          PCA_Timer2 = PCAx->PCA_Value;
+ 137   2          B_Capture2 = 0;
+ 138   2          PCA2_mode = PCAx->PCA_Mode;
+ 139   2          CCAP2_tmp = PCA_Timer2;
+ 140   2          CCAP2L = (uint8_t)CCAP2_tmp;      //将影射寄存器写入捕获寄存器，先写CCAP0L
+ 141   2          CCAP2H = (uint8_t)(CCAP2_tmp >> 8); //后写CCAP0H
+ 142   2        }
+ 143   1      }
+ 144          
+ 145          
+ 146          //========================================================================
+ 147          // 函数: void PCA_Handler (void) interrupt PCA_VECTOR
+ 148          // 描述: PCA中断处理程序.
+ 149          // 参数: None
+ 150          // 返回: none.
+ 151          // 版本: V1.0, 2012-11-22
+ 152          //========================================================================
+ 153          void  PCA_Handler (void) interrupt PCA_VECTOR
+ 154          {
+ 155   1        if(CCF0)    //PCA模块0中断
+ 156   1        {
+ 157   2          CCF0 = 0;   //清PCA模块0中断标志
+ 158   2          if(P25) CCAP0_tmp += PCA_Timer0;  //输出为高电平，则给影射寄存器装载高电平时间长度
+ 159   2          else  CCAP0_tmp += PWM0_low;  //输出为低电平，则给影射寄存器装载低电平时间长度
+ 160   2          CCAP0L = (uint8_t)CCAP0_tmp;      //将影射寄存器写入捕获寄存器，先写CCAP0L
+ 161   2          CCAP0H = (uint8_t)(CCAP0_tmp >> 8); //后写CCAP0H
+ 162   2        }
+ 163   1      
+ 164   1        if(CCF1)  //PCA模块1中断
+ 165   1        {
+ 166   2          CCF1 = 0;   //清PCA模块1中断标志
+ 167   2          if(P26) CCAP1_tmp += PCA_Timer1;  //输出为高电平，则给影射寄存器装载高电平时间长度
+ 168   2          else  CCAP1_tmp += PWM1_low;  //输出为低电平，则给影射寄存器装载低电平时间长度
+ 169   2          CCAP1L = (uint8_t)CCAP1_tmp;      //将影射寄存器写入捕获寄存器，先写CCAP0L
+ 170   2          CCAP1H = (uint8_t)(CCAP1_tmp >> 8); //后写CCAP0H
+ 171   2        }
+ 172   1      
+ 173   1        if(CCF2)  //PCA模块2中断
+ 174   1        {
+ 175   2          CCF2 = 0;   //清PCA模块1中断标志
+ 176   2          if(P27) CCAP2_tmp += PCA_Timer2;  //输出为高电平，则给影射寄存器装载高电平时间长度
+ 177   2          else  CCAP2_tmp += PWM2_low;  //输出为低电平，则给影射寄存器装载低电平时间长度
+ 178   2          CCAP2L = (uint8_t)CCAP2_tmp;      //将影射寄存器写入捕获寄存器，先写CCAP0L
+C51 COMPILER V9.60.7.0   PCA                                                               12/20/2023 11:03:57 PAGE 4   
+
+ 179   2          CCAP2H = (uint8_t)(CCAP2_tmp >> 8); //后写CCAP0H
+ 180   2        }
+ 181   1      
+ 182   1      /*  if(CF)  //PCA溢出中断
+ 183   1        {
+ 184   1          CF = 0;     //清PCA溢出中断标志
+ 185   1        }
+ 186   1      */
+ 187   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    752    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =     21       3
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      3    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

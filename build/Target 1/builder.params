@@ -1,0 +1,83 @@
+{
+    "name": "RICHBOT_A14_51",
+    "target": "Target 1",
+    "toolchain": "Keil_C51",
+    "toolchainLocation": "C:\\Keil_v5\\C51",
+    "toolchainCfgFile": "c:\\Users\\HH\\.vscode\\extensions\\cl.eide-3.13.2023060401\\res\\data\\models\\win32/8051.keil.model.json",
+    "buildMode": "normal|multhread",
+    "showRepathOnLog": true,
+    "threadNum": 16,
+    "rootDir": "c:\\Users\\HH\\Desktop\\大三上\\硬件综合实践\\#\\DEMO",
+    "dumpPath": "build\\Target 1",
+    "outDir": "build\\Target 1",
+    "incDirs": [
+        "../../../../../../../Keil_v5/C51/INC/Atmel",
+        "User",
+        "System",
+        "../../../../../../../Keil_v5/C51/INC"
+    ],
+    "libDirs": [],
+    "defines": [
+        "__UVISION_VERSION=526"
+    ],
+    "sourceList": [
+        "Driver/A14_buzzer.c",
+        "Driver/A14_motor.c",
+        "Driver/A14_uart.c",
+        "Driver/OLED.c",
+        "System/PCA.c",
+        "System/RICHBOT_timer.c",
+        "System/USART.C",
+        "System/gpio.c",
+        "User/main.c"
+    ],
+    "sourceParams": {},
+    "sourceParamsMtime": 1702957639123.7935,
+    "options": {
+        "version": 2,
+        "beforeBuildTasks": [],
+        "afterBuildTasks": [],
+        "global": {
+            "ram-mode": "LARGE",
+            "rom-mode": "LARGE"
+        },
+        "c/cpp-compiler": {
+            "optimization-type": "SPEED",
+            "optimization-level": "level-8",
+            "optimization": "8,SPEED"
+        },
+        "asm-compiler": {},
+        "linker": {
+            "remove-unused": true,
+            "output-format": "elf",
+            "misc-controls": ""
+        }
+    },
+    "env": {
+        "workspaceFolder": "c:\\Users\\HH\\Desktop\\大三上\\硬件综合实践\\#\\DEMO",
+        "workspaceFolderBasename": "DEMO",
+        "OutDir": "c:\\Users\\HH\\Desktop\\大三上\\硬件综合实践\\#\\DEMO\\build\\Target 1",
+        "OutDirRoot": "build",
+        "OutDirBase": "build\\Target 1",
+        "ProjectName": "RICHBOT_A14_51",
+        "ConfigName": "Target 1",
+        "ProjectRoot": "c:\\Users\\HH\\Desktop\\大三上\\硬件综合实践\\#\\DEMO",
+        "ExecutableName": "c:\\Users\\HH\\Desktop\\大三上\\硬件综合实践\\#\\DEMO\\build\\Target 1\\RICHBOT_A14_51",
+        "SYS_Platform": "win32",
+        "SYS_DirSep": "\\",
+        "SYS_DirSeparator": "\\",
+        "SYS_PathSep": ";",
+        "SYS_PathSeparator": ";",
+        "SYS_EOL": "\r\n",
+        "ToolchainRoot": "C:\\Keil_v5\\C51"
+    },
+    "sha": {
+        "c/cpp-defines": "b5babb9cacba6494fa0692e84c1cf8da",
+        "beforeBuildTasks": "d751713988987e9331980363e24189ce",
+        "afterBuildTasks": "d751713988987e9331980363e24189ce",
+        "global": "5c1c59113cbe0150b247fd5bfa57b870",
+        "c/cpp-compiler": "d6401cb3a45dab99a8d0301dd2b94e32",
+        "asm-compiler": "99914b932bd37a50b983c5e7c90ae93b",
+        "linker": "597518d1c8a04719cb4a5ebf3f403cba"
+    }
+}

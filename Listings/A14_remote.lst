@@ -1,0 +1,143 @@
+C51 COMPILER V9.60.7.0   A14_REMOTE                                                        11/30/2023 20:59:21 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE A14_REMOTE
+OBJECT MODULE PLACED IN .\Objects\A14_remote.obj
+COMPILER INVOKED BY: D:\keilC51\C51\BIN\C51.EXE Driver\A14_remote.c LARGE OPTIMIZE(8,SPEED) BROWSE INCDIR(.\User;.\Syste
+                    -m) DEBUG OBJECTEXTEND PRINT(.\Listings\A14_remote.lst) TABS(2) OBJECT(.\Objects\A14_remote.obj)
+
+line level    source
+
+   1          #include "global.h"
+   2          
+   3          static uint16_t g_Speed;
+   4          
+   5          static char *strpbrk(const char *cs, const char *ct)
+   6          {
+   7   1        const char *sc1, *sc2;
+   8   1        
+   9   1        for (sc1 = cs; *sc1 != '\0'; ++sc1){
+  10   2          for (sc2 = ct; *sc2 != '\0'; ++sc2) {
+  11   3            if (*sc1 == *sc2)
+  12   3              return (char *)sc1;
+  13   3          }
+  14   2        }
+  15   1        return NULL;
+  16   1      }
+  17          
+  18          static char *strsep(char **s, const char *ct)
+  19          {
+  20   1        char *sbegin = *s;
+  21   1        char *end;
+  22   1        
+  23   1        if (sbegin == NULL)
+  24   1          return NULL;
+  25   1        
+  26   1        end = strpbrk(sbegin, ct);
+  27   1        if (end)
+  28   1          *end++ = '\0';
+  29   1        *s = end;
+  30   1        return sbegin;
+  31   1      }
+  32          
+  33          #define MAX_ARG_NUM 5
+  34          
+  35          static void ProcessOneLine(char *cmd_line)
+  36          {
+  37   1        uint8_t argc;
+  38   1        int param;
+  39   1        static char * argv[MAX_ARG_NUM];
+  40   1        char *pline;
+  41   1        char *ret;
+  42   1        for (argc = 0, pline = cmd_line;;) {
+  43   2          ret = strsep(&pline, " \t\n\r");
+  44   2          if (ret == NULL) break;
+  45   2          if (strcmp(ret, "") == 0) continue;
+  46   2          argv[argc] = ret;
+  47   2          argc++;
+  48   2          if (argc >= MAX_ARG_NUM) break;
+  49   2        }
+  50   1        if (argc == 0) return;
+  51   1        if (strcmp(argv[0], "RICHBOT") == 0) {
+  52   2          if (strcmp(argv[1], "DIR") == 0) {
+  53   3            if (strcmp(argv[2], "S") == 0)
+  54   3              Motor_Run(STOP, g_Speed);
+C51 COMPILER V9.60.7.0   A14_REMOTE                                                        11/30/2023 20:59:21 PAGE 2   
+
+  55   3            else if (strcmp(argv[2], "F") == 0) 
+  56   3              Motor_Run(FORWARD, g_Speed);
+  57   3            else if (strcmp(argv[2], "B") == 0) 
+  58   3              Motor_Run(BACKWARDS, g_Speed);
+  59   3            else if (strcmp(argv[2], "L") == 0) 
+  60   3              Motor_Run(TURNLEFT, g_Speed);
+  61   3            else if (strcmp(argv[2], "R") == 0) 
+  62   3              Motor_Run(TURNRIGHT, g_Speed);
+  63   3            else if (strcmp(argv[2], "TL") == 0) 
+  64   3              Motor_Run(SPINTURNLEFT, g_Speed);
+  65   3            else if (strcmp(argv[2], "TR") == 0) 
+  66   3              Motor_Run(SPINTURNRIGHT, g_Speed);
+  67   3          }
+  68   2          else if (strcmp(argv[1], "BEEP") == 0) {
+  69   3            if (strcmp(argv[2], "ON") == 0)
+  70   3              Buzzer_TurnOn(0);
+  71   3            else
+  72   3              Buzzer_TurnOn(1);
+  73   3          }
+  74   2          else if (strcmp(argv[1], "SPEEDL") == 0) {
+  75   3            sscanf(argv[2],"%u",&param);
+  76   3            g_Speed = (PWM_HIGH_MAX - PWM_HIGH_MIN) / 256 * param + PWM_HIGH_MIN;
+  77   3          }
+  78   2          else if (strcmp(argv[1], "SPEEDR") == 0) {
+  79   3            sscanf(argv[2],"%u",&param);
+  80   3            g_Speed = (PWM_HIGH_MAX - PWM_HIGH_MIN) / 256 * param + PWM_HIGH_MIN;
+  81   3          }
+  82   2        }
+  83   1      //  else {
+  84   1      //    printf("command %s not supported.\r\n", argv[0]);
+  85   1      //  }
+  86   1      }
+  87          
+  88          void Remote_Task(void)
+  89          {
+  90   1        char buf[8];
+  91   1        uint8_t i, ret;
+  92   1        static char  line[80];
+  93   1        static uint8_t state;
+  94   1        
+  95   1        ret = uart1_Read(buf, sizeof(buf));
+  96   1        if (ret <= 0) return;
+  97   1        for (i=0; i<ret; i++) {
+  98   2          if (state < sizeof(line)-1) {
+  99   3            if (buf[i] != '\b') {
+ 100   4              line[state] = buf[i];
+ 101   4              state++;
+ 102   4            } 
+ 103   3            else {
+ 104   4              if (state>0)  state--;
+ 105   4            }
+ 106   3          }
+ 107   2          if (buf[i] == '\n') {
+ 108   3            line[state] = '\0';
+ 109   3            ProcessOneLine(line);
+ 110   3            state = 0;
+ 111   3          }
+ 112   2        }
+ 113   1      }
+ 114          
+ 115          
+
+C51 COMPILER V9.60.7.0   A14_REMOTE                                                        11/30/2023 20:59:21 PAGE 3   
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1103    ----
+   CONSTANT SIZE    =     59    ----
+   XDATA SIZE       =     98      43
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

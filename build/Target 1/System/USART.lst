@@ -1,0 +1,1059 @@
+C51 COMPILER V9.60.7.0   USART                                                             12/19/2023 11:49:39 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE USART
+OBJECT MODULE PLACED IN .\build\Target 1\System\USART.o
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.exe .\SYSTEM\USART.C OMF2 TABS(4) CODE NOCOND SYMBOLS PRINT(.\build\Target 1
+                    -\System\USART.lst) INCDIR(../../../../../../../Keil_v5/C51/INC/Atmel;User;System;../../../../../../../Keil_v5/C51/INC) D
+                    -EFINE(__UVISION_VERSION=526) OPTIMIZE(8,SPEED) LARGE ROM(LARGE) OBJECT(.\build\Target 1\System\USART.o)
+
+line level    source
+
+   1          #include "USART.h"
+   2          
+   3          
+   4          //禁止串2接收
+   5          #define     TI2                 (S2CON & 2) != 0
+   6          #define     RI2                 (S2CON & 1) != 0
+   7          #define     SET_TI2()           S2CON |=  2
+   8          #define     CLR_TI2()           S2CON &= ~2
+   9          #define     CLR_RI2()           S2CON &= ~1
+  10          #define     S2TB8_SET()         S2CON |=  8
+  11          #define     S2TB8_CLR()         S2CON &= ~8
+  12          #define     S2_Int_en()         IE2   |=  1     //串口2允许中断
+  13          #define     S2_USE_P10P11()     P_SW2 &= ~1     //UART2 使用P1口    默认
+  14          #define     S2_USE_P46P47()     P_SW2 |=  1     //UART2 使用P4口
+  15          
+  16          #define     S3_USE_P00P01()     P_SW2 &= ~2     //UART3 使用P0口    默认
+  17          #define     S3_USE_P50P51()     P_SW2 |=  2     //UART3 使用P5口
+  18          #define     S4_USE_P02P03()     P_SW2 &= ~4     //UART4 使用P0口    默认
+  19          #define     S4_USE_P52P53()     P_SW2 |=  4     //UART4 使用P5口
+  20          
+  21          uint8_t USART_Init(uint8_t UARTx, COMx_InitDefine *COMx)
+  22          {
+  23   1          uint32_t    j;
+  24   1          
+  25   1          if(UARTx == USART1)
+  26   1          {
+  27   2      //      COM1.id = 1;
+  28   2      //      COM1.TX_read    = 0;
+  29   2      //      COM1.TX_write   = 0;
+  30   2      //      COM1.B_TX_busy  = 0;
+  31   2      //      COM1.RX_Cnt     = 0;
+  32   2      //      COM1.RX_TimeOut = 0;
+  33   2      //      COM1.B_RX_OK    = 0;
+  34   2      //      for(i=0; i<COM_TX1_Lenth; i++)  TX1_Buffer[i] = 0;
+  35   2      //      for(i=0; i<COM_RX1_Lenth; i++)  RX1_Buffer[i] = 0;
+  36   2      
+  37   2              if(COMx->UART_Mode > UART_9bit_BRTx)    return 2;   //模式错误
+  38   2              if(COMx->UART_Polity == PolityHigh)     PS = 1; //高优先级中断
+  39   2              else                                    PS = 0; //低优先级中断
+  40   2              SCON = (SCON & 0x3f) | COMx->UART_Mode;
+  41   2              if((COMx->UART_Mode == UART_9bit_BRTx) ||(COMx->UART_Mode == UART_8bit_BRTx))   //可变波特率
+  42   2              {
+  43   3                  j = (CFG_SYSFREQ / 4) / COMx->UART_BaudRate;    //按1T计算
+  44   3                  if(j >= 65536UL)    return 2;   //错误
+  45   3                  j = 65536UL - j;
+  46   3                  if(COMx->UART_BRT_Use == BRT_Timer1)
+  47   3                  {
+  48   4                      TR1 = 0;
+  49   4                      AUXR &= ~0x01;      //S1 BRT Use Timer1;
+  50   4                      TMOD &= ~(1<<6);    //Timer1 set As Timer
+  51   4                      TMOD &= ~0x30;      //Timer1_16bitAutoReload;
+  52   4                      AUXR |=  (1<<6);    //Timer1 set as 1T mode
+  53   4                      TH1 = (uint8_t)(j>>8);
+C51 COMPILER V9.60.7.0   USART                                                             12/19/2023 11:49:39 PAGE 2   
+
+  54   4                      TL1 = (uint8_t)j;
+  55   4                      ET1 = 0;    //禁止中断
+  56   4                      TMOD &= ~0x40;  //定时
+  57   4                      INT_CLKO &= ~0x02;  //不输出时钟
+  58   4                      TR1  = 1;
+  59   4                  }
+  60   3                  else if(COMx->UART_BRT_Use == BRT_Timer2)
+  61   3                  {
+  62   4                      AUXR &= ~(1<<4);    //Timer stop
+  63   4                      AUXR |= 0x01;       //S1 BRT Use Timer2;
+  64   4                      AUXR &= ~(1<<3);    //Timer2 set As Timer
+  65   4                      AUXR |=  (1<<2);    //Timer2 set as 1T mode
+  66   4                      T2H = (uint8_t)(j>>8);
+  67   4                      T2L = (uint8_t)j;
+  68   4                      IE2  &= ~(1<<2);    //禁止中断
+  69   4                      AUXR &= ~(1<<3);    //定时
+  70   4                      AUXR |=  (1<<4);    //Timer run enable
+  71   4                  }
+  72   3                  else return 2;  //错误
+  73   3              }
+  74   2              else if(COMx->UART_Mode == UART_ShiftRight)
+  75   2              {
+  76   3                  if(COMx->BaudRateDouble == ENABLE)  AUXR |=  (1<<5);    //固定波特率SysClk/2
+  77   3                  else                                AUXR &= ~(1<<5);    //固定波特率SysClk/12
+  78   3              }
+  79   2              else if(COMx->UART_Mode == UART_9bit)   //固定波特率SysClk*2^SMOD/64
+  80   2              {
+  81   3                  if(COMx->BaudRateDouble == ENABLE)  PCON |=  (1<<7);    //固定波特率SysClk/32
+  82   3                  else                                PCON &= ~(1<<7);    //固定波特率SysClk/64
+  83   3              }
+  84   2              if(COMx->UART_Interrupt == ENABLE)  ES = 1; //允许中断
+  85   2              else                                ES = 0; //禁止中断
+  86   2              if(COMx->UART_RxEnable == ENABLE)   REN = 1;    //允许接收
+  87   2              else                                REN = 0;    //禁止接收
+  88   2              P_SW1 = (P_SW1 & 0x3f) | (COMx->UART_P_SW & 0xc0);  //切换IO
+  89   2              if(COMx->UART_RXD_TXD_Short == ENABLE)  CLK_DIV |=  (1<<4); //内部短路RXD与TXD, 做中继, ENABLE,DISABLE
+  90   2              else                                    CLK_DIV &= ~(1<<4);
+  91   2              return  0;
+  92   2          }
+  93   1      
+  94   1          if(UARTx == USART2)
+  95   1          {
+  96   2      //      COM2.id = 2;
+  97   2      //      COM2.TX_read    = 0;
+  98   2      //      COM2.TX_write   = 0;
+  99   2      //      COM2.B_TX_busy  = 0;
+ 100   2      //      COM2.RX_Cnt     = 0;
+ 101   2      //      COM2.RX_TimeOut = 0;
+ 102   2      //      COM2.B_RX_OK    = 0;
+ 103   2      //      for(i=0; i<COM_TX2_Lenth; i++)  TX2_Buffer[i] = 0;
+ 104   2      //      for(i=0; i<COM_RX2_Lenth; i++)  RX2_Buffer[i] = 0;
+ 105   2      
+ 106   2              if((COMx->UART_Mode == UART_9bit_BRTx) ||(COMx->UART_Mode == UART_8bit_BRTx))   //可变波特率
+ 107   2              {
+ 108   3                  if(COMx->UART_Polity == PolityHigh)     IP2 |=  1;  //高优先级中断
+ 109   3                  else                                    IP2 &= ~1;  //低优先级中断
+ 110   3                  if(COMx->UART_Mode == UART_9bit_BRTx)   S2CON |=  (1<<7);   //9bit
+ 111   3                  else                                    S2CON &= ~(1<<7);   //8bit
+ 112   3                  j = (CFG_SYSFREQ / 4) / COMx->UART_BaudRate;    //按1T计算
+ 113   3                  if(j >= 65536UL)    return 2;   //错误
+ 114   3                  j = 65536UL - j;
+ 115   3                  AUXR &= ~(1<<4);    //Timer stop
+C51 COMPILER V9.60.7.0   USART                                                             12/19/2023 11:49:39 PAGE 3   
+
+ 116   3                  AUXR &= ~(1<<3);    //Timer2 set As Timer
+ 117   3                  AUXR |=  (1<<2);    //Timer2 set as 1T mode
+ 118   3                  T2H = (uint8_t)(j>>8);
+ 119   3                  T2L = (uint8_t)j;
+ 120   3                  IE2  &= ~(1<<2);    //禁止中断
+ 121   3                  AUXR |=  (1<<4);    //Timer run enable
+ 122   3              }
+ 123   2              else    return 2;   //模式错误
+ 124   2              if(COMx->UART_Interrupt == ENABLE)  IE2   |=  1;        //允许中断
+ 125   2              else                                IE2   &= ~1;        //禁止中断
+ 126   2              if(COMx->UART_RxEnable == ENABLE)   S2CON |=  (1<<4);   //允许接收
+ 127   2              else                                S2CON &= ~(1<<4);   //禁止接收
+ 128   2              P_SW2 = (P_SW2 & ~1) | (COMx->UART_P_SW & 0x01);    //切换IO
+ 129   2          }
+ 130   1          return  0;
+ 131   1      }
+ 132          
+ 133          
+ 134          
+ 135          /********************* UART1中断函数************************/
+ 136          //void UART1_int (void) interrupt UART1_VECTOR
+ 137          //{
+ 138          //  if(RI)
+ 139          //  {
+ 140          //      RI = 0;
+ 141          //      if(COM1.B_RX_OK == 0)
+ 142          //      {
+ 143          //          if(COM1.RX_Cnt >= COM_RX1_Lenth)    COM1.RX_Cnt = 0;
+ 144          //          RX1_Buffer[COM1.RX_Cnt++] = SBUF;
+ 145          //          COM1.RX_TimeOut = TimeOutSet1;
+ 146          //      }
+ 147          //  }
+ 148          
+ 149          //  if(TI)
+ 150          //  {
+ 151          //      TI = 0;
+ 152          //      if(COM1.TX_read != COM1.TX_write)
+ 153          //      {
+ 154          //          SBUF = TX1_Buffer[COM1.TX_read];
+ 155          //          if(++COM1.TX_read >= COM_TX1_Lenth)     COM1.TX_read = 0;
+ 156          //      }
+ 157          //      else    COM1.B_TX_busy = 0;
+ 158          //  }
+ 159          //}
+ 160          
+ 161          /********************* UART2中断函数************************/
+ 162          //void UART2_int (void) interrupt UART2_VECTOR
+ 163          //{
+ 164          //  if(RI2)
+ 165          //  {
+ 166          //      CLR_RI2();
+ 167          //      if(COM2.B_RX_OK == 0)
+ 168          //      {
+ 169          //          if(COM2.RX_Cnt >= COM_RX2_Lenth)    COM2.RX_Cnt = 0;
+ 170          //          RX2_Buffer[COM2.RX_Cnt++] = S2BUF;
+ 171          //          COM2.RX_TimeOut = TimeOutSet2;
+ 172          //      }
+ 173          //  }
+ 174          
+ 175          //  if(TI2)
+ 176          //  {
+ 177          //      CLR_TI2();
+C51 COMPILER V9.60.7.0   USART                                                             12/19/2023 11:49:39 PAGE 4   
+
+ 178          //      if(COM2.TX_read != COM2.TX_write)
+ 179          //      {
+ 180          //          S2BUF = TX2_Buffer[COM2.TX_read];
+ 181          //          if(++COM2.TX_read >= COM_TX2_Lenth)     COM2.TX_read = 0;
+ 182          //      }
+ 183          //      else    COM2.B_TX_busy = 0;
+ 184          //  }
+ 185          
+ 186          //}
+ 187          
+ 188          
+ 189          
+C51 COMPILER V9.60.7.0   USART                                                             12/19/2023 11:49:39 PAGE 5   
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION _USART_Init (BEGIN)
+                                           ; SOURCE LINE # 21
+0000 900000      R     MOV     DPTR,#COMx
+0003 EB                MOV     A,R3
+0004 F0                MOVX    @DPTR,A
+0005 A3                INC     DPTR
+0006 EA                MOV     A,R2
+0007 F0                MOVX    @DPTR,A
+0008 A3                INC     DPTR
+0009 E9                MOV     A,R1
+000A F0                MOVX    @DPTR,A
+000B 900000      R     MOV     DPTR,#UARTx
+000E EF                MOV     A,R7
+000F F0                MOVX    @DPTR,A
+                                           ; SOURCE LINE # 22
+                                           ; SOURCE LINE # 25
+0010 6401              XRL     A,#01H
+0012 6003              JZ      $ + 5H
+0014 020000      R     LJMP    ?C0001
+                                           ; SOURCE LINE # 26
+                                           ; SOURCE LINE # 37
+0017 A3                INC     DPTR
+0018 E0                MOVX    A,@DPTR
+0019 FB                MOV     R3,A
+001A A3                INC     DPTR
+001B E0                MOVX    A,@DPTR
+001C FA                MOV     R2,A
+001D A3                INC     DPTR
+001E E0                MOVX    A,@DPTR
+001F F9                MOV     R1,A
+0020 120000      E     LCALL   ?C?CLDPTR
+0023 D3                SETB    C
+0024 94C0              SUBB    A,#0C0H
+0026 4003              JC      ?C0002
+0028 7F02              MOV     R7,#02H
+002A 22                RET     
+002B         ?C0002:
+                                           ; SOURCE LINE # 38
+002B 90000A            MOV     DPTR,#0AH
+002E 120000      E     LCALL   ?C?CLDOPTR
+0031 B40104            CJNE    A,#01H,?C0004
+0034 D2BC              SETB    PS
+0036 8002              SJMP    ?C0005
+0038         ?C0004:
+                                           ; SOURCE LINE # 39
+0038 C2BC              CLR     PS
+003A         ?C0005:
+                                           ; SOURCE LINE # 40
+003A 120000      E     LCALL   ?C?CLDPTR
+003D FF                MOV     R7,A
+003E E598              MOV     A,SCON
+0040 543F              ANL     A,#03FH
+0042 4F                ORL     A,R7
+0043 F598              MOV     SCON,A
+                                           ; SOURCE LINE # 41
+0045 EF                MOV     A,R7
+0046 64C0              XRL     A,#0C0H
+0048 6008              JZ      ?C0007
+004A EF                MOV     A,R7
+C51 COMPILER V9.60.7.0   USART                                                             12/19/2023 11:49:39 PAGE 6   
+
+004B 6440              XRL     A,#040H
+004D 6003              JZ      $ + 5H
+004F 020000      R     LJMP    ?C0006
+0052         ?C0007:
+                                           ; SOURCE LINE # 42
+                                           ; SOURCE LINE # 43
+0052 900002            MOV     DPTR,#02H
+0055 120000      E     LCALL   ?C?LLDOPTR0
+0058 7F00              MOV     R7,#00H
+005A 7E60              MOV     R6,#060H
+005C 7D54              MOV     R5,#054H
+005E 7C00              MOV     R4,#00H
+0060 120000      E     LCALL   ?C?ULDIV
+0063 900000      R     MOV     DPTR,#j
+0066 120000      E     LCALL   ?C?LSTXDATA
+                                           ; SOURCE LINE # 44
+0069 E4                CLR     A
+006A FF                MOV     R7,A
+006B FE                MOV     R6,A
+006C 7D01              MOV     R5,#01H
+006E FC                MOV     R4,A
+006F 900000      R     MOV     DPTR,#j
+0072 E0                MOVX    A,@DPTR
+0073 F8                MOV     R0,A
+0074 A3                INC     DPTR
+0075 E0                MOVX    A,@DPTR
+0076 F9                MOV     R1,A
+0077 A3                INC     DPTR
+0078 E0                MOVX    A,@DPTR
+0079 FA                MOV     R2,A
+007A A3                INC     DPTR
+007B E0                MOVX    A,@DPTR
+007C FB                MOV     R3,A
+007D C3                CLR     C
+007E 120000      E     LCALL   ?C?ULCMP
+0081 4003              JC      ?C0008
+0083 7F02              MOV     R7,#02H
+0085 22                RET     
+0086         ?C0008:
+                                           ; SOURCE LINE # 45
+0086 900000      R     MOV     DPTR,#j
+0089 E0                MOVX    A,@DPTR
+008A F8                MOV     R0,A
+008B A3                INC     DPTR
+008C E0                MOVX    A,@DPTR
+008D F9                MOV     R1,A
+008E A3                INC     DPTR
+008F E0                MOVX    A,@DPTR
+0090 FA                MOV     R2,A
+0091 A3                INC     DPTR
+0092 E0                MOVX    A,@DPTR
+0093 FB                MOV     R3,A
+0094 C3                CLR     C
+0095 E4                CLR     A
+0096 9B                SUBB    A,R3
+0097 FF                MOV     R7,A
+0098 E4                CLR     A
+0099 9A                SUBB    A,R2
+009A FE                MOV     R6,A
+009B 7401              MOV     A,#01H
+009D 99                SUBB    A,R1
+009E FD                MOV     R5,A
+C51 COMPILER V9.60.7.0   USART                                                             12/19/2023 11:49:39 PAGE 7   
+
+009F E4                CLR     A
+00A0 98                SUBB    A,R0
+00A1 FC                MOV     R4,A
+00A2 900000      R     MOV     DPTR,#j
+00A5 120000      E     LCALL   ?C?LSTXDATA
+                                           ; SOURCE LINE # 46
+00A8 900000      R     MOV     DPTR,#COMx
+00AB E0                MOVX    A,@DPTR
+00AC FB                MOV     R3,A
+00AD A3                INC     DPTR
+00AE E0                MOVX    A,@DPTR
+00AF FA                MOV     R2,A
+00B0 A3                INC     DPTR
+00B1 E0                MOVX    A,@DPTR
+00B2 F9                MOV     R1,A
+00B3 900001            MOV     DPTR,#01H
+00B6 120000      E     LCALL   ?C?CLDOPTR
+00B9 FB                MOV     R3,A
+00BA 6401              XRL     A,#01H
+00BC 7038              JNZ     ?C0009
+                                           ; SOURCE LINE # 47
+                                           ; SOURCE LINE # 48
+00BE C28E              CLR     TR1
+                                           ; SOURCE LINE # 49
+00C0 538EFE            ANL     AUXR,#0FEH
+                                           ; SOURCE LINE # 50
+00C3 5389BF            ANL     TMOD,#0BFH
+                                           ; SOURCE LINE # 51
+00C6 5389CF            ANL     TMOD,#0CFH
+                                           ; SOURCE LINE # 52
+00C9 438E40            ORL     AUXR,#040H
+                                           ; SOURCE LINE # 53
+00CC 900000      R     MOV     DPTR,#j
+00CF E0                MOVX    A,@DPTR
+00D0 FC                MOV     R4,A
+00D1 A3                INC     DPTR
+00D2 E0                MOVX    A,@DPTR
+00D3 FD                MOV     R5,A
+00D4 A3                INC     DPTR
+00D5 E0                MOVX    A,@DPTR
+00D6 FE                MOV     R6,A
+00D7 A3                INC     DPTR
+00D8 E0                MOVX    A,@DPTR
+00D9 FF                MOV     R7,A
+00DA 7808              MOV     R0,#08H
+00DC 120000      E     LCALL   ?C?ULSHR
+00DF 8F8D              MOV     TH1,R7
+                                           ; SOURCE LINE # 54
+00E1 900000      R     MOV     DPTR,#j
+00E4 A3                INC     DPTR
+00E5 A3                INC     DPTR
+00E6 A3                INC     DPTR
+00E7 E0                MOVX    A,@DPTR
+00E8 F58B              MOV     TL1,A
+                                           ; SOURCE LINE # 55
+00EA C2AB              CLR     ET1
+                                           ; SOURCE LINE # 56
+00EC 5389BF            ANL     TMOD,#0BFH
+                                           ; SOURCE LINE # 57
+00EF 538FFD            ANL     INT_CLKO,#0FDH
+                                           ; SOURCE LINE # 58
+00F2 D28E              SETB    TR1
+C51 COMPILER V9.60.7.0   USART                                                             12/19/2023 11:49:39 PAGE 8   
+
+                                           ; SOURCE LINE # 59
+00F4 8076              SJMP    ?C0013
+00F6         ?C0009:
+                                           ; SOURCE LINE # 60
+00F6 EB                MOV     A,R3
+00F7 6402              XRL     A,#02H
+00F9 7035              JNZ     ?C0011
+                                           ; SOURCE LINE # 61
+                                           ; SOURCE LINE # 62
+00FB 538EEF            ANL     AUXR,#0EFH
+                                           ; SOURCE LINE # 63
+00FE 438E01            ORL     AUXR,#01H
+                                           ; SOURCE LINE # 64
+0101 538EF7            ANL     AUXR,#0F7H
+                                           ; SOURCE LINE # 65
+0104 438E04            ORL     AUXR,#04H
+                                           ; SOURCE LINE # 66
+0107 900000      R     MOV     DPTR,#j
+010A E0                MOVX    A,@DPTR
+010B FC                MOV     R4,A
+010C A3                INC     DPTR
+010D E0                MOVX    A,@DPTR
+010E FD                MOV     R5,A
+010F A3                INC     DPTR
+0110 E0                MOVX    A,@DPTR
+0111 FE                MOV     R6,A
+0112 A3                INC     DPTR
+0113 E0                MOVX    A,@DPTR
+0114 FF                MOV     R7,A
+0115 7808              MOV     R0,#08H
+0117 120000      E     LCALL   ?C?ULSHR
+011A 8FD6              MOV     T2H,R7
+                                           ; SOURCE LINE # 67
+011C 900000      R     MOV     DPTR,#j
+011F A3                INC     DPTR
+0120 A3                INC     DPTR
+0121 A3                INC     DPTR
+0122 E0                MOVX    A,@DPTR
+0123 F5D7              MOV     T2L,A
+                                           ; SOURCE LINE # 68
+0125 53AFFB            ANL     IE2,#0FBH
+                                           ; SOURCE LINE # 69
+0128 538EF7            ANL     AUXR,#0F7H
+                                           ; SOURCE LINE # 70
+012B 438E10            ORL     AUXR,#010H
+                                           ; SOURCE LINE # 71
+012E 803C              SJMP    ?C0013
+0130         ?C0011:
+                                           ; SOURCE LINE # 72
+0130 7F02              MOV     R7,#02H
+0132 22                RET     
+                                           ; SOURCE LINE # 73
+0133         ?C0006:
+                                           ; SOURCE LINE # 74
+0133 900000      R     MOV     DPTR,#COMx
+0136 E0                MOVX    A,@DPTR
+0137 FB                MOV     R3,A
+0138 A3                INC     DPTR
+0139 E0                MOVX    A,@DPTR
+013A FA                MOV     R2,A
+013B A3                INC     DPTR
+013C E0                MOVX    A,@DPTR
+C51 COMPILER V9.60.7.0   USART                                                             12/19/2023 11:49:39 PAGE 9   
+
+013D F9                MOV     R1,A
+013E 120000      E     LCALL   ?C?CLDPTR
+0141 FF                MOV     R7,A
+0142 7013              JNZ     ?C0014
+                                           ; SOURCE LINE # 75
+                                           ; SOURCE LINE # 76
+0144 900008            MOV     DPTR,#08H
+0147 120000      E     LCALL   ?C?CLDOPTR
+014A B40105            CJNE    A,#01H,?C0015
+014D 438E20            ORL     AUXR,#020H
+0150 801A              SJMP    ?C0013
+0152         ?C0015:
+                                           ; SOURCE LINE # 77
+0152 538EDF            ANL     AUXR,#0DFH
+                                           ; SOURCE LINE # 78
+0155 8015              SJMP    ?C0013
+0157         ?C0014:
+                                           ; SOURCE LINE # 79
+0157 EF                MOV     A,R7
+0158 B48011            CJNE    A,#080H,?C0013
+                                           ; SOURCE LINE # 80
+                                           ; SOURCE LINE # 81
+015B 900008            MOV     DPTR,#08H
+015E 120000      E     LCALL   ?C?CLDOPTR
+0161 B40105            CJNE    A,#01H,?C0019
+0164 438780            ORL     PCON,#080H
+0167 8003              SJMP    ?C0013
+0169         ?C0019:
+                                           ; SOURCE LINE # 82
+0169 53877F            ANL     PCON,#07FH
+                                           ; SOURCE LINE # 83
+016C         ?C0013:
+                                           ; SOURCE LINE # 84
+016C 900000      R     MOV     DPTR,#COMx
+016F E0                MOVX    A,@DPTR
+0170 FB                MOV     R3,A
+0171 A3                INC     DPTR
+0172 E0                MOVX    A,@DPTR
+0173 FA                MOV     R2,A
+0174 A3                INC     DPTR
+0175 E0                MOVX    A,@DPTR
+0176 F9                MOV     R1,A
+0177 900009            MOV     DPTR,#09H
+017A 120000      E     LCALL   ?C?CLDOPTR
+017D B40104            CJNE    A,#01H,?C0021
+0180 D2AC              SETB    ES
+0182 8002              SJMP    ?C0022
+0184         ?C0021:
+                                           ; SOURCE LINE # 85
+0184 C2AC              CLR     ES
+0186         ?C0022:
+                                           ; SOURCE LINE # 86
+0186 900007            MOV     DPTR,#07H
+0189 120000      E     LCALL   ?C?CLDOPTR
+018C B40104            CJNE    A,#01H,?C0023
+018F D29C              SETB    REN
+0191 8002              SJMP    ?C0024
+0193         ?C0023:
+                                           ; SOURCE LINE # 87
+0193 C29C              CLR     REN
+0195         ?C0024:
+                                           ; SOURCE LINE # 88
+C51 COMPILER V9.60.7.0   USART                                                             12/19/2023 11:49:39 PAGE 10  
+
+0195 90000B            MOV     DPTR,#0BH
+0198 120000      E     LCALL   ?C?CLDOPTR
+019B 54C0              ANL     A,#0C0H
+019D FF                MOV     R7,A
+019E E5A2              MOV     A,P_SW1
+01A0 543F              ANL     A,#03FH
+01A2 4F                ORL     A,R7
+01A3 F5A2              MOV     P_SW1,A
+                                           ; SOURCE LINE # 89
+01A5 90000C            MOV     DPTR,#0CH
+01A8 120000      E     LCALL   ?C?CLDOPTR
+01AB B40105            CJNE    A,#01H,?C0025
+01AE 439710            ORL     CLK_DIV,#010H
+01B1 8003              SJMP    ?C0026
+01B3         ?C0025:
+                                           ; SOURCE LINE # 90
+01B3 5397EF            ANL     CLK_DIV,#0EFH
+01B6         ?C0026:
+                                           ; SOURCE LINE # 91
+01B6 7F00              MOV     R7,#00H
+01B8 22                RET     
+                                           ; SOURCE LINE # 92
+01B9         ?C0001:
+                                           ; SOURCE LINE # 94
+01B9 900000      R     MOV     DPTR,#UARTx
+01BC E0                MOVX    A,@DPTR
+01BD 6402              XRL     A,#02H
+01BF 6003              JZ      $ + 5H
+01C1 020000      R     LJMP    ?C0027
+                                           ; SOURCE LINE # 95
+                                           ; SOURCE LINE # 106
+01C4 A3                INC     DPTR
+01C5 E0                MOVX    A,@DPTR
+01C6 FB                MOV     R3,A
+01C7 A3                INC     DPTR
+01C8 E0                MOVX    A,@DPTR
+01C9 FA                MOV     R2,A
+01CA A3                INC     DPTR
+01CB E0                MOVX    A,@DPTR
+01CC F9                MOV     R1,A
+01CD 120000      E     LCALL   ?C?CLDPTR
+01D0 FF                MOV     R7,A
+01D1 64C0              XRL     A,#0C0H
+01D3 6008              JZ      ?C0029
+01D5 EF                MOV     A,R7
+01D6 6440              XRL     A,#040H
+01D8 6003              JZ      $ + 5H
+01DA 020000      R     LJMP    ?C0028
+01DD         ?C0029:
+                                           ; SOURCE LINE # 107
+                                           ; SOURCE LINE # 108
+01DD 90000A            MOV     DPTR,#0AH
+01E0 120000      E     LCALL   ?C?CLDOPTR
+01E3 B40105            CJNE    A,#01H,?C0030
+01E6 43B501            ORL     IP2,#01H
+01E9 8003              SJMP    ?C0031
+01EB         ?C0030:
+                                           ; SOURCE LINE # 109
+01EB 53B5FE            ANL     IP2,#0FEH
+01EE         ?C0031:
+                                           ; SOURCE LINE # 110
+01EE 120000      E     LCALL   ?C?CLDPTR
+C51 COMPILER V9.60.7.0   USART                                                             12/19/2023 11:49:39 PAGE 11  
+
+01F1 B4C005            CJNE    A,#0C0H,?C0032
+01F4 439A80            ORL     S2CON,#080H
+01F7 8003              SJMP    ?C0033
+01F9         ?C0032:
+                                           ; SOURCE LINE # 111
+01F9 539A7F            ANL     S2CON,#07FH
+01FC         ?C0033:
+                                           ; SOURCE LINE # 112
+01FC 900002            MOV     DPTR,#02H
+01FF 120000      E     LCALL   ?C?LLDOPTR0
+0202 7F00              MOV     R7,#00H
+0204 7E60              MOV     R6,#060H
+0206 7D54              MOV     R5,#054H
+0208 7C00              MOV     R4,#00H
+020A 120000      E     LCALL   ?C?ULDIV
+020D 900000      R     MOV     DPTR,#j
+0210 120000      E     LCALL   ?C?LSTXDATA
+                                           ; SOURCE LINE # 113
+0213 E4                CLR     A
+0214 FF                MOV     R7,A
+0215 FE                MOV     R6,A
+0216 7D01              MOV     R5,#01H
+0218 FC                MOV     R4,A
+0219 900000      R     MOV     DPTR,#j
+021C E0                MOVX    A,@DPTR
+021D F8                MOV     R0,A
+021E A3                INC     DPTR
+021F E0                MOVX    A,@DPTR
+0220 F9                MOV     R1,A
+0221 A3                INC     DPTR
+0222 E0                MOVX    A,@DPTR
+0223 FA                MOV     R2,A
+0224 A3                INC     DPTR
+0225 E0                MOVX    A,@DPTR
+0226 FB                MOV     R3,A
+0227 C3                CLR     C
+0228 120000      E     LCALL   ?C?ULCMP
+022B 4003              JC      ?C0034
+022D 7F02              MOV     R7,#02H
+022F 22                RET     
+0230         ?C0034:
+                                           ; SOURCE LINE # 114
+0230 900000      R     MOV     DPTR,#j
+0233 E0                MOVX    A,@DPTR
+0234 F8                MOV     R0,A
+0235 A3                INC     DPTR
+0236 E0                MOVX    A,@DPTR
+0237 F9                MOV     R1,A
+0238 A3                INC     DPTR
+0239 E0                MOVX    A,@DPTR
+023A FA                MOV     R2,A
+023B A3                INC     DPTR
+023C E0                MOVX    A,@DPTR
+023D FB                MOV     R3,A
+023E C3                CLR     C
+023F E4                CLR     A
+0240 9B                SUBB    A,R3
+0241 FF                MOV     R7,A
+0242 E4                CLR     A
+0243 9A                SUBB    A,R2
+0244 FE                MOV     R6,A
+0245 7401              MOV     A,#01H
+C51 COMPILER V9.60.7.0   USART                                                             12/19/2023 11:49:39 PAGE 12  
+
+0247 99                SUBB    A,R1
+0248 FD                MOV     R5,A
+0249 E4                CLR     A
+024A 98                SUBB    A,R0
+024B FC                MOV     R4,A
+024C 900000      R     MOV     DPTR,#j
+024F 120000      E     LCALL   ?C?LSTXDATA
+                                           ; SOURCE LINE # 115
+0252 538EEF            ANL     AUXR,#0EFH
+                                           ; SOURCE LINE # 116
+0255 538EF7            ANL     AUXR,#0F7H
+                                           ; SOURCE LINE # 117
+0258 438E04            ORL     AUXR,#04H
+                                           ; SOURCE LINE # 118
+025B 900000      R     MOV     DPTR,#j
+025E E0                MOVX    A,@DPTR
+025F FC                MOV     R4,A
+0260 A3                INC     DPTR
+0261 E0                MOVX    A,@DPTR
+0262 FD                MOV     R5,A
+0263 A3                INC     DPTR
+0264 E0                MOVX    A,@DPTR
+0265 FE                MOV     R6,A
+0266 A3                INC     DPTR
+0267 E0                MOVX    A,@DPTR
+0268 FF                MOV     R7,A
+0269 7808              MOV     R0,#08H
+026B 120000      E     LCALL   ?C?ULSHR
+026E 8FD6              MOV     T2H,R7
+                                           ; SOURCE LINE # 119
+0270 900000      R     MOV     DPTR,#j
+0273 A3                INC     DPTR
+0274 A3                INC     DPTR
+0275 A3                INC     DPTR
+0276 E0                MOVX    A,@DPTR
+0277 F5D7              MOV     T2L,A
+                                           ; SOURCE LINE # 120
+0279 53AFFB            ANL     IE2,#0FBH
+                                           ; SOURCE LINE # 121
+027C 438E10            ORL     AUXR,#010H
+                                           ; SOURCE LINE # 122
+027F 8003              SJMP    ?C0035
+0281         ?C0028:
+                                           ; SOURCE LINE # 123
+0281 7F02              MOV     R7,#02H
+0283 22                RET     
+0284         ?C0035:
+                                           ; SOURCE LINE # 124
+0284 900000      R     MOV     DPTR,#COMx
+0287 E0                MOVX    A,@DPTR
+0288 FB                MOV     R3,A
+0289 A3                INC     DPTR
+028A E0                MOVX    A,@DPTR
+028B FA                MOV     R2,A
+028C A3                INC     DPTR
+028D E0                MOVX    A,@DPTR
+028E F9                MOV     R1,A
+028F 900009            MOV     DPTR,#09H
+0292 120000      E     LCALL   ?C?CLDOPTR
+0295 B40105            CJNE    A,#01H,?C0036
+0298 43AF01            ORL     IE2,#01H
+029B 8003              SJMP    ?C0037
+C51 COMPILER V9.60.7.0   USART                                                             12/19/2023 11:49:39 PAGE 13  
+
+029D         ?C0036:
+                                           ; SOURCE LINE # 125
+029D 53AFFE            ANL     IE2,#0FEH
+02A0         ?C0037:
+                                           ; SOURCE LINE # 126
+02A0 900007            MOV     DPTR,#07H
+02A3 120000      E     LCALL   ?C?CLDOPTR
+02A6 B40105            CJNE    A,#01H,?C0038
+02A9 439A10            ORL     S2CON,#010H
+02AC 8003              SJMP    ?C0039
+02AE         ?C0038:
+                                           ; SOURCE LINE # 127
+02AE 539AEF            ANL     S2CON,#0EFH
+02B1         ?C0039:
+                                           ; SOURCE LINE # 128
+02B1 90000B            MOV     DPTR,#0BH
+02B4 120000      E     LCALL   ?C?CLDOPTR
+02B7 5401              ANL     A,#01H
+02B9 FF                MOV     R7,A
+02BA E5BA              MOV     A,P_SW2
+02BC 54FE              ANL     A,#0FEH
+02BE 4F                ORL     A,R7
+02BF F5BA              MOV     P_SW2,A
+                                           ; SOURCE LINE # 129
+02C1         ?C0027:
+                                           ; SOURCE LINE # 130
+02C1 7F00              MOV     R7,#00H
+                                           ; SOURCE LINE # 131
+02C3         ?C0003:
+02C3 22                RET     
+             ; FUNCTION _USART_Init (END)
+
+C51 COMPILER V9.60.7.0   USART                                                             12/19/2023 11:49:39 PAGE 14  
+
+NAME                                    CLASS   MSPACE  TYPE    OFFSET  SIZE
+====                                    =====   ======  ====    ======  ====
+
+
+uint16_t . . . . . . . . . . . . . . .  TYPEDEF  -----  U_INT    -----  2
+CCF2 . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00DAH  1
+P1M0 . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0092H  1
+P0M1 . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0093H  1
+P2M0 . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0096H  1
+P1M1 . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0091H  1
+P0 . . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0080H  1
+P3M0 . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00B2H  1
+P2M1 . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0095H  1
+P1 . . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0090H  1
+PCA_InitTypeDef. . . . . . . . . . . .  TYPEDEF  -----  STRUCT   -----  8
+  PCA_IoUse. . . . . . . . . . . . . .  MEMBER   -----  U_CHAR   0000H  1
+  PCA_Clock. . . . . . . . . . . . . .  MEMBER   -----  U_CHAR   0001H  1
+  PCA_Mode . . . . . . . . . . . . . .  MEMBER   -----  U_CHAR   0002H  1
+  PCA_PWM_Wide . . . . . . . . . . . .  MEMBER   -----  U_CHAR   0003H  1
+  PCA_Interrupt_Mode . . . . . . . . .  MEMBER   -----  U_CHAR   0004H  1
+  PCA_Polity . . . . . . . . . . . . .  MEMBER   -----  U_CHAR   0005H  1
+  PCA_Value. . . . . . . . . . . . . .  MEMBER   -----  U_INT    0006H  2
+P4M0 . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00B4H  1
+P3M1 . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00B1H  1
+P2 . . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00A0H  1
+WKTCH. . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00ABH  1
+P5M0 . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00CAH  1
+P4M1 . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00B3H  1
+P3 . . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00B0H  1
+P6M0 . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00CCH  1
+P5M1 . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00C9H  1
+P4 . . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00C0H  1
+AC . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00D6H  1
+PWMIF. . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00F6H  1
+P7M0 . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00E2H  1
+P6M1 . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00CBH  1
+P5 . . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00C8H  1
+EA . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00AFH  1
+P7M1 . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00E1H  1
+P6 . . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00E8H  1
+WKTCL. . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00AAH  1
+P7 . . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00F8H  1
+_USART_Init. . . . . . . . . . . . . .  PUBLIC   CODE   PROC     0000H  -----
+  UARTx. . . . . . . . . . . . . . . .  AUTO     XDATA  U_CHAR   0000H  1
+  COMx . . . . . . . . . . . . . . . .  AUTO     XDATA  PTR      0001H  3
+  j. . . . . . . . . . . . . . . . . .  AUTO     XDATA  U_LONG   0004H  4
+SPINTURNRIGHT. . . . . . . . . . . . .  E_CONST  -----  U_CHAR   -----  1
+SPCTL. . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00CEH  1
+CF . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00DFH  1
+PWMCR. . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00F5H  1
+CH . . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00F9H  1
+P_SW1. . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00A2H  1
+P_SW2. . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00BAH  1
+EADC . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00ADH  1
+IE . . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00A8H  1
+CL . . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00E9H  1
+IAP_CMD. . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00C5H  1
+CCAP0H . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00FAH  1
+size_t . . . . . . . . . . . . . . . .  TYPEDEF  -----  U_INT    -----  2
+CCAP1H . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00FBH  1
+CCAP2H . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00FCH  1
+C51 COMPILER V9.60.7.0   USART                                                             12/19/2023 11:49:39 PAGE 15  
+
+NAME                                    CLASS   MSPACE  TYPE    OFFSET  SIZE
+====                                    =====   ======  ====    ======  ====
+
+
+ADC_RES. . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00BDH  1
+CCAP0L . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00EAH  1
+CR . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00DEH  1
+BACKWARDS. . . . . . . . . . . . . . .  E_CONST  -----  U_CHAR   -----  1
+PWMFDCR. . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00F7H  1
+CCAP1L . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00EBH  1
+CCAPM0 . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00DAH  1
+CCAP2L . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00ECH  1
+CCAPM1 . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00DBH  1
+TIM_InitTypeDef. . . . . . . . . . . .  TYPEDEF  -----  STRUCT   -----  8
+  TIM_Mode . . . . . . . . . . . . . .  MEMBER   -----  U_CHAR   0000H  1
+  TIM_Polity . . . . . . . . . . . . .  MEMBER   -----  U_CHAR   0001H  1
+  TIM_Interrupt. . . . . . . . . . . .  MEMBER   -----  U_CHAR   0002H  1
+  TIM_ClkSource. . . . . . . . . . . .  MEMBER   -----  U_CHAR   0003H  1
+  TIM_ClkOut . . . . . . . . . . . . .  MEMBER   -----  U_CHAR   0004H  1
+  TIM_Value. . . . . . . . . . . . . .  MEMBER   -----  U_INT    0005H  2
+  TIM_Run. . . . . . . . . . . . . . .  MEMBER   -----  U_CHAR   0007H  1
+FORWARD. . . . . . . . . . . . . . . .  E_CONST  -----  U_CHAR   -----  1
+CCAPM2 . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00DCH  1
+ES . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00ACH  1
+PADC . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00BDH  1
+IP . . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00B8H  1
+RI . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0098H  1
+_motor_direction_. . . . . . . . . . .  * TAG *  -----  ENUM     -----  -----
+CY . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00D7H  1
+TI . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0099H  1
+COMx_InitDefine. . . . . . . . . . . .  TYPEDEF  -----  STRUCT   -----  13
+  UART_Mode. . . . . . . . . . . . . .  MEMBER   -----  U_CHAR   0000H  1
+  UART_BRT_Use . . . . . . . . . . . .  MEMBER   -----  U_CHAR   0001H  1
+  UART_BaudRate. . . . . . . . . . . .  MEMBER   -----  U_LONG   0002H  4
+  Morecommunicate. . . . . . . . . . .  MEMBER   -----  U_CHAR   0006H  1
+  UART_RxEnable. . . . . . . . . . . .  MEMBER   -----  U_CHAR   0007H  1
+  BaudRateDouble . . . . . . . . . . .  MEMBER   -----  U_CHAR   0008H  1
+  UART_Interrupt . . . . . . . . . . .  MEMBER   -----  U_CHAR   0009H  1
+  UART_Polity. . . . . . . . . . . . .  MEMBER   -----  U_CHAR   000AH  1
+  UART_P_SW. . . . . . . . . . . . . .  MEMBER   -----  U_CHAR   000BH  1
+  UART_RXD_TXD_Short . . . . . . . . .  MEMBER   -----  U_CHAR   000CH  1
+CLK_DIV. . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0097H  1
+IAP_ADDRH. . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00C3H  1
+PS . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00BCH  1
+SP . . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0081H  1
+CMOD . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00D9H  1
+CCON . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00D8H  1
+IAP_ADDRL. . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00C4H  1
+PPCA . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00BFH  1
+OV . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00D2H  1
+CMPCR1 . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00E6H  1
+CMPCR2 . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00E7H  1
+ELVD . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00AEH  1
+P00. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0080H  1
+ADC_CONTR. . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00BCH  1
+SBUF . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0099H  1
+PCON . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0087H  1
+P10. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0090H  1
+P01. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0081H  1
+P20. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00A0H  1
+P11. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0091H  1
+C51 COMPILER V9.60.7.0   USART                                                             12/19/2023 11:49:39 PAGE 16  
+
+NAME                                    CLASS   MSPACE  TYPE    OFFSET  SIZE
+====                                    =====   ======  ====    ======  ====
+
+
+P02. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0082H  1
+P30. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B0H  1
+P21. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00A1H  1
+P12. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0092H  1
+P03. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0083H  1
+SPINTURNLEFT . . . . . . . . . . . . .  E_CONST  -----  U_CHAR   -----  1
+SCON . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0098H  1
+P40. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00C0H  1
+P31. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B1H  1
+P22. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00A2H  1
+P13. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0093H  1
+P04. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0084H  1
+TMOD . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0089H  1
+TCON . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0088H  1
+P50. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00C8H  1
+P41. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00C1H  1
+P32. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B2H  1
+P23. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00A3H  1
+P14. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0094H  1
+P05. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0085H  1
+P60. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00E8H  1
+P51. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00C9H  1
+P42. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00C2H  1
+P33. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B3H  1
+P24. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00A4H  1
+P15. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0095H  1
+P06. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0086H  1
+PLVD . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00BEH  1
+P70. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00F8H  1
+P61. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00E9H  1
+P52. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00CAH  1
+P43. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00C3H  1
+P34. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B4H  1
+P25. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00A5H  1
+P16. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0096H  1
+P07. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0087H  1
+P71. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00F9H  1
+P62. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00EAH  1
+P53. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00CBH  1
+P44. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00C4H  1
+P35. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B5H  1
+P26. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00A6H  1
+P17. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0097H  1
+P72. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00FAH  1
+P63. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00EBH  1
+P54. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00CCH  1
+P45. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00C5H  1
+P36. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B6H  1
+P27. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00A7H  1
+P73. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00FBH  1
+P64. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00ECH  1
+P55. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00CDH  1
+P46. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00C6H  1
+P37. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B7H  1
+P74. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00FCH  1
+P65. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00EDH  1
+P56. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00CEH  1
+C51 COMPILER V9.60.7.0   USART                                                             12/19/2023 11:49:39 PAGE 17  
+
+NAME                                    CLASS   MSPACE  TYPE    OFFSET  SIZE
+====                                    =====   ======  ====    ======  ====
+
+
+P47. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00C7H  1
+P75. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00FDH  1
+P66. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00EEH  1
+P57. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00CFH  1
+P76. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00FEH  1
+P67. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00EFH  1
+IE0. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0089H  1
+BUS_SPEED. . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00A1H  1
+P77. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00FFH  1
+IE1. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      008BH  1
+IE2. . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00AFH  1
+AUXR . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   008EH  1
+B. . . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00F0H  1
+IAP_CONTR. . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00C7H  1
+PWMCFG . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00F1H  1
+STOP . . . . . . . . . . . . . . . . .  E_CONST  -----  U_CHAR   -----  1
+ACC. . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00E0H  1
+ET0. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00A9H  1
+TF0. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      008DH  1
+ET1. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00ABH  1
+TURNRIGHT. . . . . . . . . . . . . . .  E_CONST  -----  U_CHAR   -----  1
+TF1. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      008FH  1
+IP2. . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00B5H  1
+RB8. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      009AH  1
+TH0. . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   008CH  1
+TH1. . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   008DH  1
+IT0. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      0088H  1
+EX0. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00A8H  1
+TB8. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      009BH  1
+T2H. . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00D6H  1
+IT1. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      008AH  1
+EX1. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00AAH  1
+uint8_t. . . . . . . . . . . . . . . .  TYPEDEF  -----  U_CHAR   -----  1
+T3H. . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00D4H  1
+P. . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00D0H  1
+SM0. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      009FH  1
+T4H. . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00D2H  1
+TL0. . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   008AH  1
+SM1. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      009EH  1
+TL1. . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   008BH  1
+SM2. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      009DH  1
+T2L. . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00D7H  1
+T3L. . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00D5H  1
+T4L. . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00D3H  1
+PT0. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B9H  1
+PT1. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00BBH  1
+RS0. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00D3H  1
+IAP_DATA . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00C2H  1
+TR0. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      008CH  1
+RS1. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00D4H  1
+TR1. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      008EH  1
+WDT_CONTR. . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00C1H  1
+PX0. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00B8H  1
+PX1. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00BAH  1
+PCA_PWM0 . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00F2H  1
+PCA_PWM1 . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00F3H  1
+PCA_PWM2 . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00F4H  1
+C51 COMPILER V9.60.7.0   USART                                                             12/19/2023 11:49:39 PAGE 18  
+
+NAME                                    CLASS   MSPACE  TYPE    OFFSET  SIZE
+====                                    =====   ======  ====    ======  ====
+
+
+P1ASF. . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   009DH  1
+DPH. . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0083H  1
+GPIO_InitTypeDef . . . . . . . . . . .  TYPEDEF  -----  STRUCT   -----  2
+  GPIO_Mode. . . . . . . . . . . . . .  MEMBER   -----  U_CHAR   0000H  1
+  GPIO_Pin . . . . . . . . . . . . . .  MEMBER   -----  U_CHAR   0001H  1
+T3T4M. . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00D1H  1
+T4T3M. . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00D1H  1
+ADC_RESL . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00BEH  1
+DPL. . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0082H  1
+SPSTAT . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00CDH  1
+S2BUF. . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   009BH  1
+S3BUF. . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00ADH  1
+S4BUF. . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0085H  1
+REN. . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      009CH  1
+S2CON. . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   009AH  1
+S3CON. . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00ACH  1
+S4CON. . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0084H  1
+SADEN. . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00B9H  1
+SADDR. . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00A9H  1
+IAP_TRIG . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00C6H  1
+AUXR1. . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00A2H  1
+F0 . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00D5H  1
+INT_CLKO . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   008FH  1
+F1 . . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00D1H  1
+TURNLEFT . . . . . . . . . . . . . . .  E_CONST  -----  U_CHAR   -----  1
+PSW. . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00D0H  1
+uint32_t . . . . . . . . . . . . . . .  TYPEDEF  -----  U_LONG   -----  4
+CCF0 . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00D8H  1
+CCF1 . . . . . . . . . . . . . . . . .  ABSBIT   -----  BIT      00D9H  1
+SPDAT. . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   00CFH  1
+P0M0 . . . . . . . . . . . . . . . . .  SFR      DATA   U_CHAR   0094H  1
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    708    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----       8
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

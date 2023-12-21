@@ -1,0 +1,15 @@
+".\Objects\main.obj",
+".\Objects\A14_motor.obj",
+".\Objects\OLED.obj",
+".\Objects\A14_uart.obj",
+".\Objects\A14_buzzer.obj",
+".\Objects\A14_track.obj",
+".\Objects\A14_ultra.obj",
+".\Objects\A14_avoid.obj",
+".\Objects\gpio.obj",
+".\Objects\RICHBOT_timer.obj",
+".\Objects\PCA.obj",
+".\Objects\USART.obj" 
+TO ".\Objects\RICHBOT_A14_51" 
+PRINT(".\Listings\RICHBOT_A14_51.m51") RAMSIZE(256) 
+DISABLEWARNING (16) 
