@@ -3,10 +3,10 @@
         {
             "name": "Target 1",
             "includePath": [
-                "c:\\Users\\HH\\Desktop\\大三上\\硬件综合实践\\#\\MY DEMO\\User",
-                "c:\\Users\\HH\\Desktop\\大三上\\硬件综合实践\\#\\MY DEMO\\System",
+                "c:\\Users\\HH\\Desktop\\大三上\\硬件综合实践\\#\\HardwarePractice\\User",
+                "c:\\Users\\HH\\Desktop\\大三上\\硬件综合实践\\#\\HardwarePractice\\System",
                 "C:\\Keil_v5\\C51\\INC",
-                "c:\\Users\\HH\\Desktop\\大三上\\硬件综合实践\\#\\MY DEMO\\Driver"
+                "c:\\Users\\HH\\Desktop\\大三上\\硬件综合实践\\#\\HardwarePractice\\Driver"
             ],
             "defines": [
                 "__C51__",
