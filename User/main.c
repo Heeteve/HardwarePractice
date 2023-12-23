@@ -5,19 +5,19 @@ void System_Init(void) {
     DelayMs(1);
     Motor_PWM_Init();
     OLED_Init();
+    OLED_ShowString(1, 1, "Initing...");
     Usart1_Init(9600);
     Buzzer_GPIO_Init();
-    OLED_ShowString(1, 1, "Init......");
     // IR_Track_GPIO_Init();
     // IR_Avoid_GPIO_Init();
-    // Ultrasound_Init();
-    // Ultrasound_PCA_SoftTimer_Init();
+    Ultrasound_Init();
+    Ultrasound_PCA_SoftTimer_Init();
     DelayMs(100);
 }
 
 void main(void) {
     // uint16_t LLL = 0, RRR = 0;
-    // float dis = 0.0;
+    float dis = 0.0;
     char xdata oled_buf[16] = {0};
     System_Init();
     DelayMs(1000);
@@ -38,12 +38,12 @@ void main(void) {
     OLED_ShowString(3, 1, "A");
     OLED_ShowString(4, 16, "a");*/
 
-    //—≠º£≤‚ ‘
+    /*//—≠º£≤‚ ‘
     while (1) {
         // get_action_old();
         get_action();
         // get_action_single();
-    }
+    }*/
 
     /*// ±‹’œ≤‚ ‘
     while (1) {
@@ -57,14 +57,13 @@ void main(void) {
         DelayMs(50);
     }*/
 
-
-    /*//≥¨…˘≤®≤‚ ‘
+    //≥¨…˘≤®≤‚ ‘
     while (1) {
         //œ‘ æµΩOLED
         dis = Get_DistanceValue();
         sprintf(oled_buf, "%0.1fCM", dis);
         OLED_ShowString(1, 1, oled_buf);
         DelayMs(1000);
-    }*/
+    }
 
 }
