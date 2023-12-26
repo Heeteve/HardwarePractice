@@ -1,5 +1,7 @@
 .vscode/
 build/
+Listings/
+
 
 # Prerequisites
 *.d
@@ -9,6 +11,7 @@ build/
 *.ko
 *.obj
 *.elf
+*.__i
 
 # Linker output
 *.ilk
