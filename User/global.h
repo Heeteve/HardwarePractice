@@ -11,7 +11,7 @@ typedef unsigned char uint8_t;
 typedef unsigned short int uint16_t;
 typedef unsigned long uint32_t;
 
-/*A14_motor.c*/
+/*motor.c*/
 #define	PWM_DUTY			(Main_Fosc_KHZ / 10)			//定义PWM的周期，10KHz
 #define	PWM_HIGH_MIN	500			  //限制PWM输出的最小占空比。
 #define PWM_HIGH_MAX	(PWM_DUTY - 1) //限制PWM输出的最大占空比。
@@ -34,13 +34,13 @@ enum _motor_direction_ 			{FORWARD,BACKWARDS,TURNLEFT,TURNRIGHT,SPINTURNLEFT,SPI
 extern void Motor_PWM_Init(void);
 extern void Motor_Run(uint8_t dir, uint16_t speed);
 
-/*A14_buzzer.c*/
+/*buzzer.c*/
 #define	BUZZER_PORT		GPIO_P3
 #define	BUZZER_PIN		GPIO_Pin_4
 extern void Buzzer_GPIO_Init(void);
 extern void Buzzer_TurnOn(uint8_t on);
 
-/*A14_IR_Track.c*/
+/*IR_Track.c*/
 #define	IR_Track_S1_PORT	GPIO_P2
 #define	IR_Track_S1_PIN		GPIO_Pin_0
 #define	IR_Track_S2_PORT	GPIO_P2
@@ -51,18 +51,19 @@ extern void Buzzer_TurnOn(uint8_t on);
 #define	IR_Track_S4_PIN		GPIO_Pin_3
 extern void IR_Track_GPIO_Init(void);
 extern void Get_TrackSensor_State(uint16_t *p_S1, uint16_t *p_S2, uint16_t *p_S3, uint16_t *p_S4);
+extern void Track_Start();
 extern void Get_Track_Action(void);
 
-/*A14_avoid.c*/
+/*avoid.c*/
 #define IR_Avoid_S5_PORT	GPIO_P2
 #define IR_Avoid_S5_PIN     GPIO_Pin_6
 #define IR_Avoid_S6_PORT	GPIO_P2
 #define IR_Avoid_S6_PIN     GPIO_Pin_7
 extern void IR_Avoid_GPIO_Init(void);
 extern void Get_AvoidSensor_State(uint16_t *p_S5, uint16_t *p_S6);
-extern void Avoid_Start(void);
+extern void Avoid_Start();
 
-/*A14_ultra*/
+/*ultra*/
 #define	Ultrasound_TRIG_PORT	GPIO_P1
 #define	Ultrasound_TRIG_PIN		GPIO_Pin_6
 #define Ultrasound_ECHO_PIN     GPIO_P1
@@ -77,8 +78,33 @@ void OLED_Init(void);
 void OLED_Clear(void);
 void OLED_ShowString(uint8_t Line, uint8_t Column, char *String);
 
+/*InfraredDriver*/
+#define IR_PIN      P33
 
+#define K_STOP      0x45
+#define K_LIGHT     0x47
+#define K_UP        0x46
+#define K_DOWN      0x15
+#define K_LEFT      0x44
+#define K_RIGHT     0x43
+#define K_SOUND     0x40
+#define K_SPINLEFT  0x07
+#define K_SPINRIGHT 0x09
+#define K_PLUS      0x16
+#define K_MINUS     0x0D
+#define K_0         0x19
+#define K_1         0x0C
+#define K_2         0x18
+#define K_3         0x5E
+#define K_4         0x08
+#define K_5         0x1C
+#define K_6         0x5A
+#define K_7         0x42
+#define K_8         0x52
+#define K_9         0x4A
 
+void Infrared_Init(void);
+void Controller(void);
 
 /*RTCHBOT_timer.c*/
 #define	Timer0						0

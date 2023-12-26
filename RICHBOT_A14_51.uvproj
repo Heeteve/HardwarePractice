@@ -407,39 +407,44 @@
           <GroupName>Driver</GroupName>
           <Files>
             <File>
-              <FileName>A14_motor.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Driver\A14_motor.c</FilePath>
-            </File>
-            <File>
               <FileName>OLED.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Driver\OLED.c</FilePath>
             </File>
             <File>
-              <FileName>A14_uart.c</FileName>
+              <FileName>InfraredDriver.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Driver\A14_uart.c</FilePath>
+              <FilePath>.\Driver\InfraredDriver.c</FilePath>
             </File>
             <File>
-              <FileName>A14_buzzer.c</FileName>
+              <FileName>Avoid.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Driver\A14_buzzer.c</FilePath>
+              <FilePath>.\Driver\Avoid.c</FilePath>
             </File>
             <File>
-              <FileName>A14_track.c</FileName>
+              <FileName>Buzzer.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Driver\A14_track.c</FilePath>
+              <FilePath>.\Driver\Buzzer.c</FilePath>
             </File>
             <File>
-              <FileName>A14_ultra.c</FileName>
+              <FileName>Motor.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Driver\A14_ultra.c</FilePath>
+              <FilePath>.\Driver\Motor.c</FilePath>
             </File>
             <File>
-              <FileName>A14_avoid.c</FileName>
+              <FileName>Track.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Driver\A14_avoid.c</FilePath>
+              <FilePath>.\Driver\Track.c</FilePath>
+            </File>
+            <File>
+              <FileName>Uart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Driver\Uart.c</FilePath>
+            </File>
+            <File>
+              <FileName>Ultra.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Driver\Ultra.c</FilePath>
             </File>
           </Files>
         </Group>
