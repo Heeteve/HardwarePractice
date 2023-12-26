@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.7.0   USART                                                             12/26/2023 17:36:03 PAGE 1   
+C51 COMPILER V9.60.7.0   USART                                                             12/26/2023 17:57:12 PAGE 1   
 
 
 C51 COMPILER V9.60.7.0, COMPILATION OF MODULE USART
@@ -62,7 +62,7 @@ line level    source
   52   4              AUXR |=  (1<<6);  //Timer1 set as 1T mode
   53   4              TH1 = (uint8_t)(j>>8);
   54   4              TL1 = (uint8_t)j;
-C51 COMPILER V9.60.7.0   USART                                                             12/26/2023 17:36:03 PAGE 2   
+C51 COMPILER V9.60.7.0   USART                                                             12/26/2023 17:57:12 PAGE 2   
 
   55   4              ET1 = 0;  //½ûÖ¹ÖÐ¶Ï
   56   4              TMOD &= ~0x40;  //¶¨Ê±
@@ -126,7 +126,7 @@ line level    source
  114   3            j = 65536UL - j;
  115   3            AUXR &= ~(1<<4);  //Timer stop
  116   3            AUXR &= ~(1<<3);  //Timer2 set As Timer
-C51 COMPILER V9.60.7.0   USART                                                             12/26/2023 17:36:03 PAGE 3   
+C51 COMPILER V9.60.7.0   USART                                                             12/26/2023 17:57:12 PAGE 3   
 
  117   3            AUXR |=  (1<<2);  //Timer2 set as 1T mode
  118   3            T2H = (uint8_t)(j>>8);
@@ -190,7 +190,7 @@ line level    source
  176          //  {
  177          //    CLR_TI2();
  178          //    if(COM2.TX_read != COM2.TX_write)
-C51 COMPILER V9.60.7.0   USART                                                             12/26/2023 17:36:03 PAGE 4   
+C51 COMPILER V9.60.7.0   USART                                                             12/26/2023 17:57:12 PAGE 4   
 
  179          //    {
  180          //      S2BUF = TX2_Buffer[COM2.TX_read];

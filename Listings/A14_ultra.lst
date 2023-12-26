@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.7.0   A14_ULTRA                                                         12/26/2023 17:36:02 PAGE 1   
+C51 COMPILER V9.60.7.0   A14_ULTRA                                                         12/26/2023 17:57:11 PAGE 1   
 
 
 C51 COMPILER V9.60.7.0, COMPILATION OF MODULE A14_ULTRA
@@ -62,7 +62,7 @@ line level    source
   52   1          CH = 0; //清除PCA计数器
   53   1          CL = 0;
   54   1          CR = 1; //启动PCA计数器
-C51 COMPILER V9.60.7.0   A14_ULTRA                                                         12/26/2023 17:36:02 PAGE 2   
+C51 COMPILER V9.60.7.0   A14_ULTRA                                                         12/26/2023 17:57:11 PAGE 2   
 
   55   1      
   56   1          while (GPIO_ReadInputDataBit(Ultrasound_ECHO_PORT, Ultrasound_ECHO_PIN)) {

@@ -1,5 +1,5 @@
 #include "global.h"
-#include "track_test.h"
+
 void System_Init(void) {
     SysTick_Init();
     DelayMs(1);
@@ -71,15 +71,15 @@ void main(void) {
     OLED_Clear();
     OLED_ShowString(4, 1, "Nop");*/
 
-    /*//—≠º£≤‚ ‘
+    //—≠º£≤‚ ‘
     while (1) {
         // get_action_old();
-        get_action();
+        Get_Action();
         // get_action_single();
-    }*/
+    }
 
-    // ±‹’œ≤‚ ‘
-    avoid_test();
+    /*// ±‹’œ≤‚ ‘
+    avoid_test();*/
 
     /*//≥¨…˘≤®≤‚ ‘
     while (1) {

@@ -33,7 +33,7 @@ void get_action_old(void) { // 稳定版
         Motor_Run(SPINTURNLEFT, PWM_DUTY / 100 * 60);
     }
 }
-void get_action(void) { // 不稳定版
+void Get_Action(void) { // 不稳定版
     uint16_t LL = 0, CL = 0, CR = 0, RR = 0; // 左，中左，中右，右
     Get_TrackSensor_State(&LL, &CL, &CR, &RR);
     if (LL == 1 && CL == 1 && CR == 1 && RR == 1) { //全白
