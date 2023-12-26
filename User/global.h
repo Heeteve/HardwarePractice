@@ -51,7 +51,7 @@ extern void Buzzer_TurnOn(uint8_t on);
 #define	IR_Track_S4_PIN		GPIO_Pin_3
 extern void IR_Track_GPIO_Init(void);
 extern void Get_TrackSensor_State(uint16_t *p_S1, uint16_t *p_S2, uint16_t *p_S3, uint16_t *p_S4);
-extern void Get_Action(void);
+extern void Get_Track_Action(void);
 
 /*A14_avoid.c*/
 #define IR_Avoid_S5_PORT	GPIO_P2

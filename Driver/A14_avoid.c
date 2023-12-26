@@ -18,7 +18,6 @@ void Get_AvoidSensor_State(uint16_t *p_S5, uint16_t *p_S6) {
 }
 
 void Avoid_Start(void) { // 避障测试
-    char xdata oled_buf[16] = {0};
     uint16_t LLL = 1, FFF = 1;
     while (1) {
         Get_AvoidSensor_State(&LLL, &FFF);

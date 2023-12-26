@@ -29,7 +29,7 @@ void Get_TrackSensor_State(uint16_t *p_S1, uint16_t *p_S2, uint16_t *p_S3, uint1
     *p_S4 = GPIO_ReadInputDataBit(IR_Track_S4_PORT, IR_Track_S4_PIN);
 }
 
-void get_action_old(void) { // 稳定版
+void Get_Track_Action_Old(void) { // 稳定版
     uint16_t LL = 0, CL = 0, CR = 0, RR = 0; // 左，中左，中右，右
     Get_TrackSensor_State(&LL, &CL, &CR, &RR);
     if (LL == 1 && CL == 1 && CR == 1 && RR == 1) { //全白
@@ -62,7 +62,7 @@ void get_action_old(void) { // 稳定版
         Motor_Run(SPINTURNLEFT, PWM_DUTY / 100 * 60);
     }
 }
-void Get_Action(void) { // 不稳定版
+void Get_Track_Action(void) { // 不稳定版
     uint16_t LL = 0, CL = 0, CR = 0, RR = 0; // 左，中左，中右，右
     Get_TrackSensor_State(&LL, &CL, &CR, &RR);
     if (LL == 1 && CL == 1 && CR == 1 && RR == 1) { //全白
@@ -97,7 +97,7 @@ void Get_Action(void) { // 不稳定版
     }
 }
 
-void get_action_single(void) { //只使用RR
+void Get_Track_Action_Single(void) { //只使用RR
     uint16_t LL = 0, CL = 0, CR = 0, RR = 0; // 左，中左，中右，右
     Get_TrackSensor_State(&LL, &CL, &CR, &RR);
     if (LL == 0) {
