@@ -15,47 +15,6 @@ void System_Init(void) {
     DelayMs(100);
 }
 
-avoid_test() { // ±‹’œ≤‚ ‘
-    char xdata oled_buf[16] = {0};
-    uint16_t LLL = 1, FFF = 1;
-    while (1) {
-        Get_AvoidSensor_State(&LLL, &FFF);
-        if (FFF==0) // «∞”–
-        {
-            OLED_ShowString(1, 1, "F:0 R:0");
-            // Motor_Run(STOP, PWM_DUTY / 100 * 100);
-            Motor_Run(SPINTURNRIGHT, PWM_DUTY / 100 * 100);
-            DelayMs(450);
-            Motor_Run(STOP, PWM_DUTY / 100 * 100);
-        }
-        else if (LLL==0 && FFF==1) // ◊Û”–£¨«∞Œﬁ
-        {
-            OLED_ShowString(1, 1, "F:0 R:1");
-            Motor_Run(TURNRIGHT, PWM_DUTY / 100 * 80);
-        }
-        else if (LLL==1 && FFF==1) //ø’
-        {
-            OLED_ShowString(1, 1, "F:1 R:1");
-            /*Motor_Run(FORWARD, PWM_DUTY / 100 * 100);
-            DelayMs(150);
-            // µ±◊Ûø’ ± º÷’◊Û◊™
-            do
-            {
-                Get_AvoidSensor_State(&LLL, &FFF);
-                Motor_Run(TURNLEFT, PWM_DUTY / 100 * 70);
-            } while (LLL==1 && FFF==1);*/
-            DelayMs(100);
-            Motor_Run(TURNLEFT, PWM_DUTY / 100 * 80);
-
-        }
-
-        OLED_ShowString(1, 1, "F:");
-        OLED_ShowString(1, 14, "R:");
-
-        DelayMs(50);
-    }
-}
-
 void main(void) {
     // float dis = 0.0;
     // char xdata oled_buf[16] = {0};
@@ -71,15 +30,15 @@ void main(void) {
     OLED_Clear();
     OLED_ShowString(4, 1, "Nop");*/
 
-    //—≠º£≤‚ ‘
+    /*//—≠º£≤‚ ‘
     while (1) {
         // get_action_old();
         Get_Action();
         // get_action_single();
-    }
+    }*/
 
-    /*// ±‹’œ≤‚ ‘
-    avoid_test();*/
+    // ±‹’œ≤‚ ‘
+    Avoid_Start();
 
     /*//≥¨…˘≤®≤‚ ‘
     while (1) {

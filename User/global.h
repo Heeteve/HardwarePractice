@@ -60,6 +60,7 @@ extern void Get_Action(void);
 #define IR_Avoid_S6_PIN     GPIO_Pin_7
 extern void IR_Avoid_GPIO_Init(void);
 extern void Get_AvoidSensor_State(uint16_t *p_S5, uint16_t *p_S6);
+extern void Avoid_Start(void);
 
 /*A14_ultra*/
 #define	Ultrasound_TRIG_PORT	GPIO_P1

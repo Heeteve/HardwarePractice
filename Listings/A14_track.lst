@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.7.0   A14_TRACK                                                         12/26/2023 17:57:11 PAGE 1   
+C51 COMPILER V9.60.7.0   A14_TRACK                                                         12/26/2023 17:59:56 PAGE 1   
 
 
 C51 COMPILER V9.60.7.0, COMPILATION OF MODULE A14_TRACK
@@ -62,7 +62,7 @@ line level    source
   52   2              Motor_Run(TURNLEFT, PWM_DUTY / 100 * 60);
   53   2          }
   54   1      
-C51 COMPILER V9.60.7.0   A14_TRACK                                                         12/26/2023 17:57:11 PAGE 2   
+C51 COMPILER V9.60.7.0   A14_TRACK                                                         12/26/2023 17:59:56 PAGE 2   
 
   55   1          if (LL == 1 && CL == 1 && CR == 0 && RR == 1) { //中右黑
   56   2              Motor_Run(TURNRIGHT, PWM_DUTY / 100 * 60);
@@ -126,7 +126,7 @@ line level    source
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-C51 COMPILER V9.60.7.0   A14_TRACK                                                         12/26/2023 17:57:11 PAGE 3   
+C51 COMPILER V9.60.7.0   A14_TRACK                                                         12/26/2023 17:59:56 PAGE 3   
 
    CODE SIZE        =   1234    ----
    CONSTANT SIZE    =     23    ----
