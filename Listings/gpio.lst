@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.7.0   GPIO                                                              12/20/2023 11:03:57 PAGE 1   
+C51 COMPILER V9.60.7.0   GPIO                                                              12/26/2023 17:36:02 PAGE 1   
 
 
 C51 COMPILER V9.60.7.0, COMPILATION OF MODULE GPIO
@@ -62,7 +62,7 @@ line level    source
   52   1        if(GPIO == GPIO_P4)
   53   1        {
   54   2          if(GPIOx->GPIO_Mode == GPIO_PullUp)   P4M1 &= ~GPIOx->GPIO_Pin, P4M0 &= ~GPIOx->GPIO_Pin;  //上拉准双向口
-C51 COMPILER V9.60.7.0   GPIO                                                              12/20/2023 11:03:57 PAGE 2   
+C51 COMPILER V9.60.7.0   GPIO                                                              12/26/2023 17:36:02 PAGE 2   
 
   55   2          if(GPIOx->GPIO_Mode == GPIO_HighZ)    P4M1 |=  GPIOx->GPIO_Pin, P4M0 &= ~GPIOx->GPIO_Pin;  //浮空输入
   56   2          if(GPIOx->GPIO_Mode == GPIO_OUT_OD)   P4M1 |=  GPIOx->GPIO_Pin, P4M0 |=  GPIOx->GPIO_Pin;  //开漏输出
@@ -126,7 +126,7 @@ line level    source
  114   1      }
  115          
  116          bit GPIO_ReadInputDataBit(uint8_t GPIOx, uint8_t GPIO_Pin) {
-C51 COMPILER V9.60.7.0   GPIO                                                              12/20/2023 11:03:57 PAGE 3   
+C51 COMPILER V9.60.7.0   GPIO                                                              12/26/2023 17:36:02 PAGE 3   
 
  117   1        uint8_t _IO_image_ = 0xff;
  118   1        if(GPIOx == GPIO_P0) {

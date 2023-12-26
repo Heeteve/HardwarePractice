@@ -30,12 +30,12 @@ float Get_DistanceValue(void) {
     static uint32_t oldticks;
     uint32_t ticks = time_GetTicks();
     uint16_t t_microsecond;
-    char xdata disBuf[16]; /*显存*/
+    char xdata disBuf[16] = {0}; /*显存*/
     float t_distance = 0;
 
     if (ticks - oldticks < 100) return -1;
     oldticks = ticks;
-    sprintf(disBuf, "%d", oldticks);
+    sprintf(disBuf, "%d", ticks);
     OLED_ShowString(2,1,disBuf);
     GPIO_SetBits(Ultrasound_TRIG_PORT, Ultrasound_TRIG_PIN); /*发送触发信号*/
     DelayMs(1);

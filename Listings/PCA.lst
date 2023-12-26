@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.7.0   PCA                                                               12/20/2023 11:03:57 PAGE 1   
+C51 COMPILER V9.60.7.0   PCA                                                               12/26/2023 17:36:03 PAGE 1   
 
 
 C51 COMPILER V9.60.7.0, COMPILATION OF MODULE PCA
@@ -62,7 +62,7 @@ line level    source
   52   2          CR = 0;           //停止PCA。
   53   2          PCA_Timer2 = high;            //数据在正确范围，则装入占空比寄存器。
   54   2          PWM2_low = PWM2_DUTY - high;        //计算并保存PWM输出低电平的PCA时钟脉冲个数。
-C51 COMPILER V9.60.7.0   PCA                                                               12/20/2023 11:03:57 PAGE 2   
+C51 COMPILER V9.60.7.0   PCA                                                               12/26/2023 17:36:03 PAGE 2   
 
   55   2          CR = 1;           //启动PCA。
   56   2        }
@@ -126,7 +126,7 @@ line level    source
  114   2          PCA0_mode = PCAx->PCA_Mode;
  115   2          CCAP0_tmp = PCA_Timer0;
  116   2          CCAP0L = (uint8_t)CCAP0_tmp;      //将影射寄存器写入捕获寄存器，先写CCAP0L
-C51 COMPILER V9.60.7.0   PCA                                                               12/20/2023 11:03:57 PAGE 3   
+C51 COMPILER V9.60.7.0   PCA                                                               12/26/2023 17:36:03 PAGE 3   
 
  117   2          CCAP0H = (uint8_t)(CCAP0_tmp >> 8); //后写CCAP0H
  118   2        }
@@ -190,7 +190,7 @@ line level    source
  176   2          if(P27) CCAP2_tmp += PCA_Timer2;  //输出为高电平，则给影射寄存器装载高电平时间长度
  177   2          else  CCAP2_tmp += PWM2_low;  //输出为低电平，则给影射寄存器装载低电平时间长度
  178   2          CCAP2L = (uint8_t)CCAP2_tmp;      //将影射寄存器写入捕获寄存器，先写CCAP0L
-C51 COMPILER V9.60.7.0   PCA                                                               12/20/2023 11:03:57 PAGE 4   
+C51 COMPILER V9.60.7.0   PCA                                                               12/26/2023 17:36:03 PAGE 4   
 
  179   2          CCAP2H = (uint8_t)(CCAP2_tmp >> 8); //后写CCAP0H
  180   2        }

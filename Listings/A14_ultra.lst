@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.7.0   A14_ULTRA                                                         12/20/2023 11:03:56 PAGE 1   
+C51 COMPILER V9.60.7.0   A14_ULTRA                                                         12/26/2023 17:36:02 PAGE 1   
 
 
 C51 COMPILER V9.60.7.0, COMPILATION OF MODULE A14_ULTRA
@@ -40,12 +40,12 @@ line level    source
   30   1          static uint32_t oldticks;
   31   1          uint32_t ticks = time_GetTicks();
   32   1          uint16_t t_microsecond;
-  33   1          char xdata disBuf[16]; /*显存*/
+  33   1          char xdata disBuf[16] = {0}; /*显存*/
   34   1          float t_distance = 0;
   35   1      
   36   1          if (ticks - oldticks < 100) return -1;
   37   1          oldticks = ticks;
-  38   1          sprintf(disBuf, "%d", oldticks);
+  38   1          sprintf(disBuf, "%d", ticks);
   39   1          OLED_ShowString(2,1,disBuf);
   40   1          GPIO_SetBits(Ultrasound_TRIG_PORT, Ultrasound_TRIG_PIN); /*发送触发信号*/
   41   1          DelayMs(1);
@@ -62,7 +62,7 @@ line level    source
   52   1          CH = 0; //清除PCA计数器
   53   1          CL = 0;
   54   1          CR = 1; //启动PCA计数器
-C51 COMPILER V9.60.7.0   A14_ULTRA                                                         12/20/2023 11:03:56 PAGE 2   
+C51 COMPILER V9.60.7.0   A14_ULTRA                                                         12/26/2023 17:36:02 PAGE 2   
 
   55   1      
   56   1          while (GPIO_ReadInputDataBit(Ultrasound_ECHO_PORT, Ultrasound_ECHO_PIN)) {
@@ -92,8 +92,8 @@ line level    source
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =    561    ----
-   CONSTANT SIZE    =     11    ----
+   CODE SIZE        =    580    ----
+   CONSTANT SIZE    =     27    ----
    XDATA SIZE       =      4      34
    PDATA SIZE       =   ----    ----
    DATA SIZE        =   ----    ----

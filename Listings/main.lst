@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.7.0   MAIN                                                              12/20/2023 11:03:56 PAGE 1   
+C51 COMPILER V9.60.7.0   MAIN                                                              12/26/2023 17:36:01 PAGE 1   
 
 
 C51 COMPILER V9.60.7.0, COMPILATION OF MODULE MAIN
@@ -15,81 +15,119 @@ line level    source
    5   1          DelayMs(1);
    6   1          Motor_PWM_Init();
    7   1          OLED_Init();
-   8   1          Usart1_Init(9600);
-   9   1          Buzzer_GPIO_Init();
-  10   1          OLED_ShowString(1, 1, "Init......");
+   8   1          OLED_ShowString(1, 1, "Initing...");
+   9   1          Usart1_Init(9600);
+  10   1          Buzzer_GPIO_Init();
   11   1          // IR_Track_GPIO_Init();
   12   1          // IR_Avoid_GPIO_Init();
-  13   1          // Ultrasound_Init();
-  14   1          // Ultrasound_PCA_SoftTimer_Init();
+  13   1          Ultrasound_Init();
+  14   1          Ultrasound_PCA_SoftTimer_Init();
   15   1          DelayMs(100);
   16   1      }
   17          
-  18          void main(void) {
-  19   1          // uint16_t LLL = 0, RRR = 0;
-  20   1          // float dis = 0.0;
-  21   1          char xdata oled_buf[16] = {0};
-  22   1          System_Init();
-  23   1          DelayMs(1000);
-  24   1          OLED_Clear();
-  25   1          /*//∑‰√˘∆˜≤‚ ‘
-  26   1          DelayMs(1000);
-  27   1          Buzzer_TurnOn(1);
-  28   1          OLED_ShowString(4, 1, "buzzING");
-  29   1          DelayMs(1000);
-  30   1          Buzzer_TurnOn(0);
-  31   1          OLED_Clear();
-  32   1          OLED_ShowString(4, 1, "Nop");*/
-  33   1      
-  34   1          /*//OLED≤‚ ‘
-  35   1          OLED_Clear();
-  36   1          OLED_ShowString(1, 1, oled_buf);
-  37   1          OLED_ShowString(2, 1, "1234567890123456");
-  38   1          OLED_ShowString(3, 1, "A");
-  39   1          OLED_ShowString(4, 16, "a");*/
-  40   1      
-  41   1          //—≠º£≤‚ ‘
-  42   1          while (1) {
-  43   2              // get_action_old();
-  44   2              get_action();
-  45   2              // get_action_single();
-  46   2          }
-  47   1      
-  48   1          /*// ±‹’œ≤‚ ‘
-  49   1          while (1) {
-  50   1              Get_AvoidSensor_State(&LLL, &RRR);
-  51   1              sprintf(oled_buf, "%d", LLL);
-  52   1              OLED_ShowString(1, 1, "L:");
-  53   1              OLED_ShowString(1, 3, oled_buf);
-  54   1              sprintf(oled_buf, "%d", RRR);
-C51 COMPILER V9.60.7.0   MAIN                                                              12/20/2023 11:03:56 PAGE 2   
+  18          avoid_test() { // ±‹’œ≤‚ ‘
+  19   1          char xdata oled_buf[16] = {0};
+  20   1          uint16_t LLL = 1, FFF = 1;
+  21   1          while (1) {
+  22   2              Get_AvoidSensor_State(&LLL, &FFF);
+  23   2              if (FFF==0) // «∞”–
+  24   2              {
+  25   3                  OLED_ShowString(1, 1, "F:0 R:0");
+  26   3                  // Motor_Run(STOP, PWM_DUTY / 100 * 100);
+  27   3                  Motor_Run(SPINTURNRIGHT, PWM_DUTY / 100 * 100);
+  28   3                  DelayMs(450);
+  29   3                  Motor_Run(STOP, PWM_DUTY / 100 * 100);
+  30   3              }
+  31   2              else if (LLL==0 && FFF==1) // ◊Û”–£¨«∞Œﬁ
+  32   2              {
+  33   3                  OLED_ShowString(1, 1, "F:0 R:1");
+  34   3                  Motor_Run(TURNRIGHT, PWM_DUTY / 100 * 80);
+  35   3              }
+  36   2              else if (LLL==1 && FFF==0) // ◊ÛŒﬁ «∞”–
+  37   2              {
+  38   3                  OLED_ShowString(1, 1, "F:1 R:0");
+  39   3                  Motor_Run(TURNRIGHT, PWM_DUTY / 100 * 90);
+  40   3              }
+  41   2              else if (LLL==1 && FFF==1) //ø’
+  42   2              {
+  43   3                  OLED_ShowString(1, 1, "F:1 R:1");
+  44   3                  /*Motor_Run(FORWARD, PWM_DUTY / 100 * 100);
+  45   3                  DelayMs(150);
+  46   3                  // µ±◊Ûø’ ± º÷’◊Û◊™
+  47   3                  do
+  48   3                  {
+  49   3                      Get_AvoidSensor_State(&LLL, &FFF);
+  50   3                      Motor_Run(TURNLEFT, PWM_DUTY / 100 * 70);
+  51   3                  } while (LLL==1 && FFF==1);*/
+  52   3                  DelayMs(100);
+  53   3                  Motor_Run(TURNLEFT, PWM_DUTY / 100 * 80);
+  54   3      
+C51 COMPILER V9.60.7.0   MAIN                                                              12/26/2023 17:36:01 PAGE 2   
 
-  55   1              OLED_ShowString(1, 14, "R:");
-  56   1              OLED_ShowString(1, 16, oled_buf);
-  57   1              DelayMs(50);
-  58   1          }*/
-  59   1      
-  60   1      
-  61   1          /*//≥¨…˘≤®≤‚ ‘
-  62   1          while (1) {
-  63   1              //œ‘ æµΩOLED
-  64   1              dis = Get_DistanceValue();
-  65   1              sprintf(oled_buf, "%0.1fCM", dis);
-  66   1              OLED_ShowString(1, 1, oled_buf);
-  67   1              DelayMs(1000);
-  68   1          }*/
-  69   1      
-  70   1      }
+  55   3              }
+  56   2      
+  57   2              OLED_ShowString(1, 1, "F:");
+  58   2              OLED_ShowString(1, 14, "R:");
+  59   2      
+  60   2              DelayMs(50);
+  61   2          }
+  62   1      }
+  63          
+  64          void main(void) {
+  65   1          // float dis = 0.0;
+  66   1          // char xdata oled_buf[16] = {0};
+  67   1          System_Init();
+  68   1          DelayMs(1000);
+  69   1          OLED_Clear();
+  70   1          /*//∑‰√˘∆˜≤‚ ‘
+  71   1          DelayMs(1000);
+  72   1          Buzzer_TurnOn(1);
+  73   1          OLED_ShowString(4, 1, "buzzING");
+  74   1          DelayMs(1000);
+  75   1          Buzzer_TurnOn(0);
+  76   1          OLED_Clear();
+  77   1          OLED_ShowString(4, 1, "Nop");*/
+  78   1      
+  79   1          /*//OLED≤‚ ‘
+  80   1          OLED_Clear();
+  81   1          OLED_ShowString(1, 1, oled_buf);
+  82   1          OLED_ShowString(2, 1, "1234567890123456");
+  83   1          OLED_ShowString(3, 1, "A");
+  84   1          OLED_ShowString(4, 16, "a");*/
+  85   1      
+  86   1          /*//—≠º£≤‚ ‘
+  87   1          while (1) {
+  88   1              // get_action_old();
+  89   1              get_action();
+  90   1              // get_action_single();
+  91   1          }*/
+  92   1      
+  93   1          // ±‹’œ≤‚ ‘
+  94   1          avoid_test();
+  95   1      
+  96   1          /*//≥¨…˘≤®≤‚ ‘
+  97   1          while (1) {
+  98   1              //œ‘ æµΩOLED
+  99   1              dis = Get_DistanceValue();
+ 100   1              sprintf(oled_buf, "%0.1fCM", dis);
+ 101   1              OLED_ShowString(1, 1, oled_buf);
+ 102   1                      OLED_ShowString(3, 1, "AAA");
+ 103   1              DelayMs(1000);
+ 104   1          }*/
+ 105   1      
+ 106   1      }
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =   1173    ----
-   CONSTANT SIZE    =     50    ----
-   XDATA SIZE       =   ----      40
+   CODE SIZE        =   1437    ----
+   CONSTANT SIZE    =     88    ----
+   XDATA SIZE       =   ----      44
    PDATA SIZE       =   ----    ----
    DATA SIZE        =   ----    ----
    IDATA SIZE       =   ----    ----
    BIT SIZE         =   ----    ----
+C51 COMPILER V9.60.7.0   MAIN                                                              12/26/2023 17:36:01 PAGE 3   
+
 END OF MODULE INFORMATION.
 
 
