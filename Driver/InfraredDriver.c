@@ -7,7 +7,6 @@ unsigned char Ir_Value[4];
 unsigned char i, j, count;
 uint8_t command = 0;
 uint16_t Speed_Delay = 100;
-uint8_t Funtion_Flag = 1;
 char str[16];
 
 void Infrared_Init() {
@@ -88,7 +87,7 @@ void decodeIR() interrupt INT1_VECTOR {
 
 void Controller(void) {
     switch (Ir_Value[2]) {
-    /*运动控制*/
+        /*运动控制*/
     case K_UP:
         Motor_Run(FORWARD, PWM_DUTY / 100 * 100);
         OLED_ShowString(1, 1, "UP");
@@ -103,30 +102,42 @@ void Controller(void) {
         break;
     case K_LEFT:
         Motor_Run(SPINTURNLEFT, PWM_DUTY / 100 * 70);
-        OLED_ShowString(1, 1, "LEFT");
+        OLED_ShowString(1, 1, "SPINLEFT");
         DelayMs(Speed_Delay);
         Motor_Run(STOP, 0);
         break;
     case K_RIGHT:
         Motor_Run(SPINTURNRIGHT, PWM_DUTY / 100 * 70);
-        OLED_ShowString(1, 1, "RIGHT");
+        OLED_ShowString(1, 1, "SPINRIGHT");
         DelayMs(Speed_Delay);
         Motor_Run(STOP, 0);
         break;
     case K_SPINLEFT:
         Motor_Run(SPINTURNLEFT, PWM_DUTY / 100 * 100);
-        OLED_ShowString(1, 1, "SPINLEFT");
-        DelayMs(430);
+        OLED_ShowString(1, 1, "SPINLEFT 90");
+        DelayMs(400);
         Motor_Run(STOP, 0);
         break;
     case K_SPINRIGHT:
         Motor_Run(SPINTURNRIGHT, PWM_DUTY / 100 * 100);
-        OLED_ShowString(1, 1, "SPINRIGHT");
-        DelayMs(430);
+        OLED_ShowString(1, 1, "SPINRIGHT 90");
+        DelayMs(400);
         Motor_Run(STOP, 0);
         break;
-    /*功能控制*/
-    case K_STOP:
+    case K_PLUS:
+        Motor_Run(TURNLEFT, PWM_DUTY / 100 * 100);
+        OLED_ShowString(1, 1, "LEFT Front");
+        DelayMs(Speed_Delay);
+        Motor_Run(STOP, 0);
+        break;
+    case K_MINUS:
+        Motor_Run(TURNRIGHT, PWM_DUTY / 100 * 100);
+        OLED_ShowString(1, 1, "RIGHT Front");
+        DelayMs(Speed_Delay);
+        Motor_Run(STOP, 0);
+        break;
+        /*功能控制*/
+    case K_STOP: // 电源键进入避障
         Motor_Run(STOP, 0);
         OLED_ShowString(1, 1, "STOP");
         Avoid_Start();
@@ -137,29 +148,37 @@ void Controller(void) {
         DelayMs(200);
         Buzzer_TurnOn(0);
         break;
-    case K_LIGHT:
+    case K_LIGHT: // 灯光键进入循迹
         OLED_ShowString(1, 1, "LIGHT");
         Track_Start();
         break;
-    case K_0:
+    case K_0: // 长直行
         Motor_Run(FORWARD, PWM_DUTY / 100 * 100);
         OLED_ShowString(1, 1, "0");
-        DelayMs(500);
+        DelayMs(1000);
         Motor_Run(STOP, 0);
         break;
     case K_1:
-        OLED_ShowString(2, 1, "Speed: 1");
-        Speed_Delay = 100;
+        OLED_ShowString(2, 1, "LEN: Short");
+        Speed_Delay = 50;
         break;
     case K_2:
-        OLED_ShowString(2, 1, "Speed: 2");
-        Speed_Delay = 200;
+        OLED_ShowString(2, 1, "LEN: Normal");
+        Speed_Delay = 100;
         break;
     case K_3:
-        OLED_ShowString(2, 1, "Speed: 3");
+        OLED_ShowString(2, 1, "LEN: Long");
         Speed_Delay = 500;
         break;
+    case K_8: // 超长直行
+        Motor_Run(FORWARD, PWM_DUTY / 100 * 100);
+        OLED_ShowString(1, 1, "GO GO GO");
+        DelayMs(3400);
+        Motor_Run(STOP, 0);
+        break;
     case K_9:
+        OLED_ShowString(1, 1, "Stop");
+        Motor_Run(STOP, 0);
         break;
     default:
         OLED_ShowString(1, 1, "DEFAULT");
