@@ -1,7 +1,8 @@
 .vscode/
 build/
 Listings/
-
+Objects/*
+!Objects/*.hex
 
 # Prerequisites
 *.d
