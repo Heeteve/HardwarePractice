@@ -181,21 +181,7 @@ void Controller(void) {
         Motor_Run(STOP, 0);
         break;
     default:
-        OLED_Clear();
         OLED_ShowString(1, 1, "DEFAULT");
-        switch (Speed_Delay) {
-        case 50:
-            OLED_ShowString(2, 1, "LEN: Short");
-            break;
-        case 100:
-            OLED_ShowString(2, 1, "LEN: Normal");
-            break;
-        case 500:
-            OLED_ShowString(2, 1, "LEN: Long");
-            break;
-        default:
-            break;
-        }
         Motor_Run(STOP, 0);
         break;
     }
