@@ -55,12 +55,12 @@ extern void Track_Start();
 extern void Get_Track_Action(void);
 
 /*avoid.c*/
-#define IR_Avoid_S5_PORT	GPIO_P2
-#define IR_Avoid_S5_PIN     GPIO_Pin_6
-#define IR_Avoid_S6_PORT	GPIO_P2
-#define IR_Avoid_S6_PIN     GPIO_Pin_7
+#define IR_Avoid_S1_PORT	GPIO_P2
+#define IR_Avoid_S1_PIN     GPIO_Pin_6
+#define IR_Avoid_S2_PORT	GPIO_P2
+#define IR_Avoid_S2_PIN     GPIO_Pin_7
 extern void IR_Avoid_GPIO_Init(void);
-extern void Get_AvoidSensor_State(uint16_t *p_S5, uint16_t *p_S6);
+extern void Get_AvoidSensor_State(uint16_t *p_S1, uint16_t *p_S2);
 extern void Avoid_Start();
 
 /*ultra*/
@@ -146,9 +146,5 @@ extern void DelayUs(uint16_t us);
 extern void Usart1_Init(uint16_t t_baud);
 extern uint8_t uart1_Read(void *vbuf,uint8_t len);
 extern void uart1_Write(const void *vbuf,uint8_t len);
-
-
-
-
 
 #endif

@@ -1,14 +1,16 @@
 #include "global.h"
 // 红外接收模块
 
-// NEC协议时间定义（单位：微秒）
-unsigned char Time_width;
+unsigned char Time_width; // NEC协议时间定义（单位：微秒）
 unsigned char Ir_Value[4];
 unsigned char i, j, count;
 uint8_t command = 0;
-uint16_t Speed_Delay = 100;
+uint16_t Speed_Delay = 100; // 电机启动时长
 char str[16];
 
+/**
+ * @brief 红外遥控接受初始化
+ */
 void Infrared_Init() {
     // 设置为INT0 中断
     GPIO_InitTypeDef GPIO_InitStructure;
@@ -22,7 +24,9 @@ void Infrared_Init() {
     EA = 1; // 总中断允许
 }
 
-// 解码NEC红外信号
+/**
+ * @brief 解码NEC红外信号
+ */
 void decodeIR() interrupt INT1_VECTOR {
     EA = 0;
     Time_width = 0;
@@ -85,6 +89,9 @@ void decodeIR() interrupt INT1_VECTOR {
     EA = 1;
 }
 
+/**
+ * @brief 红外控制函数，根据红外遥控器的输入执行相应的动作。
+ */
 void Controller(void) {
     switch (Ir_Value[2]) {
         /*运动控制*/
