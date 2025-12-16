@@ -11,6 +11,9 @@
 - 1、2、3：调节可调的移动时长，分别为0.05s、0.1s、0.5s
 - 8：直行3.5s
 - 9：中止
+
+遥控改键前往`Driver/InfraredDriver.c`，循迹参数调整前往`Driver/Track.c`
+
 ### ⭐点个Star呗
 
 
